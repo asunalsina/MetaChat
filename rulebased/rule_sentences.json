@@ -1,0 +1,58 @@
+{
+    "feelings": ["I've noticed that you're feeling a bit down. How are you feeling?",
+                "What is making you feel like that?",
+                ["Do you want me to tell you some exercises that can help you?",
+                "Why don't you try one of your hobbies such as %s?"],
+                "Choose one!"],
+
+    "suggestion_keywords": ["suggest", "suggestion", "suggestions", "exercise", "exercises"],
+
+    "anxiety_exercises": ["Breathing exercises", "Visualization exercises"],
+
+    "exercises_instructions":{"breathing": "Put one hand on your chest and the other one on your stomach. Then take deep breaths through your nose. Try to count to four while inhaling and to four while exhaling. Continue the exercise until you feel calmer.",
+                            "visualization": "Think of a place that makes you feel comfortable, happy, safe, peaceful, calmed. It can be a real or imaginary place."},
+
+    "current": ["It feels like the current situation is distressing you",
+                "How does it make you feel?",
+                ["Let's go for a walk to relax a bit", 
+                "What about doing a video call with your friends?", 
+                "Let's try some breathing exercises",
+                "Why don't you try one of your hobbies such as %s?"]],
+
+    "user_data": ["What do you want to do?", ["Choose one option", 
+                "It's used to improve the ability of the chatbot to detect the intent and feelings of the users so it can provide a better service",
+                "The questions asked are based on the data the chatbot gets from the conversations with the users"]],
+
+    "malfunction": ["What is the problem with the chatbot?", 
+                ["How is the chatbot being %s?", "Could you explain the problem?"], 
+                "Thank you for you input!"],
+
+
+    "profile_data": [["Are you sure you want to delete your data?", "What do you want to do?", "How often do you want the reminders?"],
+                    "Okay, your data has been deleted"],
+
+    "buttons": {"yes_no": [["Yes"], ["No"]], 
+
+                "feelings": [["Stressed"], ["Depressed"], ["None"]],
+
+                "distress": [["Lonely"], ["Sad"], ["Depressed"], ["Stressed"], 
+                    ["Afraid"], ["Overwhelmed"]],
+
+                "malfunction": [["Repetitive"], ["Unclear"], 
+                        ["Disrespectful"], ["Illogical"],
+                        ["Other"]],
+
+                "data": [["Manage my data"], ["Know how my data is used"]],
+
+                "new_data": [["Manage my data"], ["Why certain questions are asked?"], 
+                    ["How is my data being used?"]],
+
+                "reason_categories": [["death"], ["job"], ["relationship"], ["money"], 
+                    ["university"], ["health"]],
+
+                "profile": [["Delete data"], ["Manage hobbies"], ["Manage reminders"]],
+
+                "reminder": [["Once a day"], ["Several days per week"], ["I do not want remminders"]],
+
+                "hobbies": [["Add hobbies"], ["Delete hobbies"], ["Saved hobbies"]]}
+}
