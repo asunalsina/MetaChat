@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
             map_df = pd.DataFrame(user['map'])
             activities = [get_hobby_relatedness(a) if a.lower() != 'nothing' else a.lower() for a in map_df['activity']]
-            db.users.update_one({'chat_id': chat_id}, {'$set': {'map.activity': activities}})
+            db.users.update_one({'chat_id': user['chat_id']}, {'$set': {'map.activity': activities}})
 
             if 'activity' in user['map'].keys():
                 activity_map = count_activities(user['map'])
