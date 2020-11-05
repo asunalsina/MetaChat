@@ -34,13 +34,14 @@ def get_hours(keyword, users):
     schedule_dict = {}
 
     for user in users:
-        if user['reminders'] == 'daily':
-            chat_id = user['chat_id']
-            data_dict = user['Stats'][0]['Word'][0]['Hour']
-            keyword_dict = [data_dict[key] for key in keywords if key in data_dict.keys()]
-            combined_dicts = reduce(reducer, keyword_dict, {})
-            selected_hours = [k for k, v in combined_dicts.items() if v > 5]
-            schedule_dict[chat_id] = convert_format_hours(selected_hours)
+        if 'reminders' in user.keys():
+            if user['reminders'] == 'daily':
+                chat_id = user['chat_id']
+                data_dict = user['Stats'][0]['Word'][0]['Hour']
+                keyword_dict = [data_dict[key] for key in keywords if key in data_dict.keys()]
+                combined_dicts = reduce(reducer, keyword_dict, {})
+                selected_hours = [k for k, v in combined_dicts.items() if v > 5]
+                schedule_dict[chat_id] = convert_format_hours(selected_hours)
 
     return schedule_dict
 
@@ -72,10 +73,9 @@ if __name__ == '__main__':
 
     keywords = ['lonely', 'depressed', 'afraid', 'sad', 'stressed', 'overwhelmed']
 
-    schedule.every().day.at('09:30').do(create_schedule, keywords, users, message)
+    schedule.every().day.at('00:00').do(create_schedule, keywords, users, message)
 
     while True:
         schedule.run_pending()
-        # 55 minutes = 3300 seconds / 25 minutes = 1500 seconds
-        time.sleep(15)
+        time.sleep(1500)
 

@@ -1,8 +1,7 @@
 {
     "feelings": ["I've noticed that you're feeling a bit down. How are you feeling?",
                 "What is making you feel like that?",
-                ["Do you want me to tell you some exercises that can help you?",
-                "Why don't you try one of your hobbies such as %s?"],
+                "Do you want me to tell you some exercises that can help you?",
                 "Choose one!"],
 
     "suggestion_keywords": ["suggest", "suggestion", "suggestions", "exercise", "exercises"],
@@ -16,8 +15,7 @@
                 "How does it make you feel?",
                 ["Let's go for a walk to relax a bit", 
                 "What about doing a video call with your friends?", 
-                "Let's try some breathing exercises",
-                "Why don't you try one of your hobbies such as %s?"]],
+                "Let's try some breathing exercises"]],
 
     "user_data": ["What do you want to do?", ["Choose one option", 
                 "It's used to improve the ability of the chatbot to detect the intent and feelings of the users so it can provide a better service",
@@ -30,6 +28,14 @@
 
     "profile_data": [["Are you sure you want to delete your data?", "What do you want to do?", "How often do you want the reminders?"],
                     "Okay, your data has been deleted"],
+
+    "feelings_phase_two": ["Is %s making you feel %s right now?", 
+        ["Let's try to improve your mood. What activity do you feel like doing?", "How do you feel?"],
+        ["What is causing it?", "Cool choice!"], 
+        "Thank you for sharing"],
+
+    "feelings_phase_three": ["I've noticed that you're %s. Let's ", 
+        "I hope this will improve your mood!"],
 
     "buttons": {"yes_no": [["Yes"], ["No"]], 
 
@@ -47,7 +53,7 @@
                 "new_data": [["Manage my data"], ["Why certain questions are asked?"], 
                     ["How is my data being used?"]],
 
-                "reason_categories": [["death"], ["job"], ["relationship"], ["money"], 
+                "reason_categories": [["grief"], ["job"], ["relationship"], ["money"], 
                     ["university"], ["health"]],
 
                 "profile": [["Delete data"], ["Manage hobbies"], ["Manage reminders"]],

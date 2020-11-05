@@ -1,11 +1,13 @@
 import numpy as np
 import string, json
 import database.mongobase as mongobase
+import pandas as pd
 
 from telegram import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 
 with open('rulebased/rule_sentences.json') as file:
     sentences = json.loads(file.read())
+
 
 def feelings_conversation(stage, meta_conversation, user_message, chat_id, sentences = sentences):
 
@@ -57,21 +59,11 @@ def feelings_conversation(stage, meta_conversation, user_message, chat_id, sente
             if reason:
                 # Save user map data
                 mongobase.user_map(chat_id, reason, 'reason')
+                mongobase.user_map(chat_id, 'nothing', 'activity')
 
-                # Check if the user has some hobbies saved in their profile
-                hobbies = mongobase.hobbies_df(chat_id)
-                if hobbies:
-                    bot_message = sentences['feelings'][stage][np.random.randint(len(sentences['feelings'][stage]))]
-                    if bot_message == sentences['feelings'][stage][1]:
-                        bot_message = bot_message %(mongobase.get_hobby(chat_id).lower())
-                        rm = {}
-                        meta_conversation = False
-                    else:
-                        button_list = sentences['buttons']['yes_no']
-                        rm = ReplyKeyboardMarkup(button_list)
-                else:
-                    bot_message = 'Tell me some of your hobbies (please separate them with a comma)'
-                    rm = {}
+                bot_message = sentences['feelings'][stage]
+                button_list = sentences['buttons']['yes_no']
+                rm = ReplyKeyboardMarkup(button_list)
 
             # If the reason cannot be classified ask the user
             else:
@@ -87,44 +79,26 @@ def feelings_conversation(stage, meta_conversation, user_message, chat_id, sente
 
     elif stage == 3:
         # Reason categories
-        if user_message.lower() in ['death', 'job', 'relationship', 'money', 'university', 'health']:
-            mongobase.user_map(chat_id, user_message.lower(), 'reason')
-
-            # Check if the user has some hobbies saved in their profile
-            hobbies = mongobase.hobbies_df(chat_id)
-            if hobbies:
-                print('In here')
-                bot_message = sentences['feelings'][stage-1][np.random.randint(len(sentences['feelings'][stage-1]))]
-                if bot_message == sentences['feelings'][stage-1][1]:
-                    bot_message = bot_message %(mongobase.get_hobby(chat_id).lower())
-                    rm = ReplyKeyboardRemove()
-                    meta_conversation = False
-                else:
-                    button_list = sentences['buttons']['yes_no']
-                    rm = ReplyKeyboardMarkup(button_list)
+        if user_message.lower() in ['loss of a loved one', 'job', 'relationship', 'money', 'university', 'health']:
+            if user_message.lower() == 'loss of a loved one': 
+                mongobase.user_map(chat_id, 'death', 'reason')
             else:
-                bot_message = 'Tell me some of your hobbies (please separate them with a comma)'
-                rm = ReplyKeyboardRemove()
+                mongobase.user_map(chat_id, user_message.lower(), 'reason')
+            mongobase.user_map(chat_id, 'nothing', 'activity')
+            
+            bot_message = sentences['feelings'][stage-1]
+            button_list = sentences['buttons']['yes_no']
+            rm = ReplyKeyboardMarkup(button_list)
 
         else:
-            # Check if the user has some hobbies saved in their profile
-            hobbies = mongobase.hobbies_df(chat_id)
-        
-            if hobbies:
-                if user_message.lower() == 'yes':
-                    bot_message = sentences['feelings'][stage]
-                    button_list = [[button] for button in sentences['anxiety_exercises']]
-                    rm = ReplyKeyboardMarkup(button_list)
-
-                else:
-                    bot_message = 'Okay!'
-                    rm = ReplyKeyboardRemove()    
-                    meta_conversation = False
+            if user_message.lower() == 'yes':
+                bot_message = sentences['feelings'][stage]
+                button_list = [[button] for button in sentences['anxiety_exercises']]
+                rm = ReplyKeyboardMarkup(button_list)
 
             else:
-                mongobase.save_hobbies(user_message, chat_id)
-                bot_message = 'Thank you'
-                rm = {}
+                bot_message = 'Okay!'
+                rm = ReplyKeyboardRemove()    
                 meta_conversation = False
 
     elif stage == 4:
@@ -134,25 +108,16 @@ def feelings_conversation(stage, meta_conversation, user_message, chat_id, sente
             meta_conversation = False
 
         else:
-            # Check if the user has some hobbies saved in their profile
-            hobbies = mongobase.hobbies_df(chat_id)
-        
-            if hobbies:
-                if user_message.lower() == 'yes':
-                    bot_message = sentences['feelings'][stage-1]
-                    button_list = [[button] for button in sentences['anxiety_exercises']]
-                    rm = ReplyKeyboardMarkup(button_list)
-
-                else:
-                    bot_message = 'Okay!'
-                    rm = ReplyKeyboardRemove()    
-                    meta_conversation = False
+            if user_message.lower() == 'yes':
+                bot_message = sentences['feelings'][stage-1]
+                button_list = [[button] for button in sentences['anxiety_exercises']]
+                rm = ReplyKeyboardMarkup(button_list)
 
             else:
-                mongobase.save_hobbies(user_message, chat_id)
-                bot_message = 'Thank you'
-                rm = {}
+                bot_message = 'Okay!'
+                rm = ReplyKeyboardRemove()    
                 meta_conversation = False
+
 
     elif stage == 5:
         bot_message = sentences['exercises_instructions'][user_message.lower().split()[0]]
@@ -181,37 +146,22 @@ def current_conversation(stage, meta_conversation, user_message, chat_id, senten
             meta_conversation = False
 
     elif stage == 2:        
-        rm = ReplyKeyboardRemove()
-        
         # Save user map data
         mongobase.user_map(chat_id, user_message.lower(), 'emotion')
         mongobase.user_map(chat_id, 'coronavirus', 'reason')
-
-        # Check if the user has some hobbies saved in their profile
-        hobbies = mongobase.hobbies_df(chat_id)
-        if hobbies:
-            bot_message = sentences['current'][stage][np.random.randint(len(sentences['current'][stage]))]
-            if bot_message == sentences['current'][stage][3]:
-                bot_message = bot_message %(mongobase.get_hobby(chat_id).lower())
-            meta_conversation = False
-
-        else:
-            bot_message = 'Tell me some of your hobbies (please separate them with a comma)'
-
-    elif stage == 3:
-        mongobase.save_hobbies(user_message, chat_id)
-        bot_message = 'Thanks!'
-        rm = {}
+        mongobase.user_map(chat_id, 'nothing', 'activity')
+        
+        bot_message = sentences['current'][stage][np.random.randint(len(sentences['current'][stage]))]
+        rm = ReplyKeyboardRemove()
         meta_conversation = False
-
 
     return rm, bot_message, meta_conversation, stage
 
 def workings_conversation(stage, meta_conversation, user_message, chat_id, entity, sentences = sentences):
 
-    if 'meta:meta' in entity:
+    if 'meta' == entity.get('name'):
         rm, bot_message, meta_conversation, stage = user_conversation(stage, meta_conversation, user_message, chat_id, sentences = sentences)
-    elif 'malfunction:malfunction' in entity:
+    elif 'malfunction' == entity.get('name'):
         rm, bot_message, meta_conversation, stage = malfunction_conversation(stage, meta_conversation, user_message, chat_id, sentences = sentences)
 
     return rm, bot_message, meta_conversation, stage
@@ -358,6 +308,74 @@ def user_conversation(stage, meta_conversation, user_message, chat_id, sentences
 
     return rm, bot_message, meta_conversation, stage
 
+def feelings_phase_2(stage, meta_conversation, user_message, chat_id, entity, sentences = sentences):
+
+    if stage == 0:
+        reason, emotion = get_reason_emotion(chat_id, entity)
+
+        bot_message = sentences['feelings_phase_two'][stage] %(reason, emotion)
+        button_list = sentences['buttons']['yes_no']
+        rm = ReplyKeyboardMarkup(button_list)
+
+    elif stage == 1:
+        if user_message.lower() == 'yes':
+            bot_message = sentences['feelings_phase_two'][stage][0]
+            rm = ReplyKeyboardRemove()
+
+        else:
+            bot_message = sentences['feelings_phase_two'][stage][1]
+            button_list = sentences['buttons']['distress']
+            rm = ReplyKeyboardMarkup(button_list)
+
+    elif stage == 2:
+        if any([True for element in sentences['buttons']['distress'] if element[0].lower() == user_message.lower()]):
+            mongobase.user_map(chat_id, user_message.lower(), 'emotion')
+            bot_message = sentences['feelings_phase_two'][stage][0]
+            button_list = sentences['buttons']['reason_categories']
+            rm = ReplyKeyboardMarkup(button_list)
+
+        else:
+            # Save activity
+            mongobase.user_map(chat_id, user_message.lower(), 'activity')
+            bot_message = sentences['feelings_phase_two'][stage][1]
+            rm = {}
+            meta_conversation = False
+
+    elif stage == 3:
+        mongobase.user_map(chat_id, user_message.lower(), 'reason')
+        bot_message = sentences['feelings_phase_two'][stage]
+        rm = ReplyKeyboardRemove()
+        meta_conversation = False
+
+    return rm, bot_message, meta_conversation, stage
+
+def feelings_phase_3(stage, meta_conversation, user_message, chat_id, entity, sentences = sentences):
+
+    common_activities = ['running', 'meditation', 'breathing exercise']
+    if stage == 0:
+        reason, emotion, activities = get_emotion_activity(chat_id, entity)
+
+        bot_message = sentences['feelings_phase_three'][stage] %(emotion)
+        button_list = [[activity] for activity in activities if activity.lower() != 'nothing']
+        
+        if len(button_list) < 3:
+            possible_activities = [activity for activity in common_activities if activity.lower() != button_list[0][0].lower()]
+            index = random.sample(range(0, len(possible_activities)), (3-len(button_list)))
+            selected_activities = [[possible_activities[i].capitalize()] for i in index]
+            button_list.extend(selected_activities)
+
+        elif len(button_list) > 3:
+            index = random.sample(range(0, len(button_list)), 3)
+            button_list = [button_list[i] for i in index]
+
+        rm = ReplyKeyboardMarkup(button_list)
+
+    elif stage == 1:
+        bot_message = sentences['feelings_phase_two'][stage]
+        rm = ReplyKeyboardRemove()
+        meta_conversation = False
+
+    return rm, bot_message, meta_conversation, stage
 
 
 # Useful functions
@@ -372,3 +390,100 @@ def classify_reason(sentence):
     else:
         reason = False
         return reason
+
+def get_reason_emotion(chat_id, entity):
+    map_pairs = mongobase.get_map_pairs(chat_id, 'reason')
+    map_pairs = pd.DataFrame(map_pairs)
+    
+    if entity:
+        emotion = entity.get('name')    
+        if emotion in map_pairs['emotion'].values:
+            emotion_pairs = map_pairs.loc[map_pairs['emotion'] == emotion]
+            max_pairs = emotion_pairs.loc[emotion_pairs['size'] == emotion_pairs['size'].max()].reset_index(drop = True)
+            if len(max_pairs) == 1:
+                reason = max_pairs['reason'][0]
+            else:
+                reason = max_pairs['reason'][np.random.randint(len(max_pairs))]
+        
+        elif emotion == 'coronavirus':
+            reason = 'coronavirus'
+            emotion_pairs = map_pairs.loc[map_pairs['reason'] == reason]
+            max_pairs = emotion_pairs.loc[emotion_pairs['size'] == emotion_pairs['size'].max()].reset_index(drop = True)
+            if len(max_pairs) == 1:
+                emotion = max_pairs['emotion'][0]
+            else:
+                emotion = max_pairs['emotion'][np.random.randint(len(max_pairs))]
+
+        else:
+            possible_reasons = map_pairs.loc[map_pairs['size'] == map_pairs['size'].max()].reset_index(drop = True)
+
+            if len(possible_reasons) == 1:
+                reason = possible_reasons['reason'][0]
+            else:
+                reason = possible_reasons['reason'][np.random.randint(len(possible_reasons))]
+    
+    else:
+        max_pairs = map_pairs.loc[map_pairs['size'] == map_pairs['size'].max()].reset_index(drop = True)
+        if len(max_pairs) == 1:
+            emotion = max_pairs['emotion'][0]
+            reason = max_pairs['reason'][0]
+        else:
+            emotion = max_pairs['emotion'][np.random.randint(len(max_pairs))]
+            reason = max_pairs['reason'][np.random.randint(len(max_pairs))]
+
+    return reason, emotion
+
+def get_emotion_activity(chat_id, entity):
+    map_pairs = mongobase.get_map_pairs(chat_id, 'activity')
+    map_pairs = pd.DataFrame(map_pairs)
+
+    if entity:
+        emotion = entity.get('name')    
+
+        if emotion in map_pairs['emotion'].values:
+            emotion_pairs = map_pairs.loc[map_pairs['emotion'] == emotion]
+            max_pairs = emotion_pairs.loc[emotion_pairs['size'] == emotion_pairs['size'].max()].reset_index(drop = True)
+
+            if len(max_pairs) == 1:
+                reason = max_pairs['reason'][0]
+            else:
+                reason = max_pairs['reason'][np.random.randint(len(max_pairs))]
+
+            activities = list(emotion_pairs.loc[emotion_pairs['reason'] == reason]['activity'])
+        
+        elif emotion == 'coronavirus':
+            reason = 'coronavirus'
+            emotion_pairs = map_pairs.loc[map_pairs['reason'] == reason]
+            max_pairs = emotion_pairs.loc[emotion_pairs['size'] == emotion_pairs['size'].max()].reset_index(drop = True)
+            if len(max_pairs) == 1:
+                emotion = max_pairs['emotion'][0]
+            else:
+                emotion = max_pairs['emotion'][np.random.randint(len(max_pairs))]
+            activities = list(emotion_pairs.loc[emotion_pairs['reason'] == reason]['activity'])
+
+        else:
+            possible_reasons = map_pairs.loc[map_pairs['size'] == map_pairs['size'].max()].reset_index(drop = True)
+
+            if len(possible_reasons) == 1:
+                reason = max_pairs['reason'][0]
+            else:
+                reason = possible_reasons['reason'][np.random.randint(len(possible_reasons))]
+        
+            emotion_pairs = map_pairs.loc[map_pairs['emotion'] == emotion]
+            activities = list(emotion_pairs.loc[emotion_pairs['reason'] == reason]['activity'])
+    
+    else:
+        max_pairs = map_pairs.loc[map_pairs['size'] == map_pairs['size'].max()].reset_index(drop = True)
+
+        if len(max_pairs) == 1:
+            emotion = max_pairs['emotion'][0]
+            reason = max_pairs['reason'][0]
+        else:
+            emotion = max_pairs['emotion'][np.random.randint(len(max_pairs))]
+            reason = max_pairs['reason'][np.random.randint(len(max_pairs))]
+
+        emotion_pairs = map_pairs.loc[map_pairs['emotion'] == emotion]
+        activities = list(emotion_pairs.loc[emotion_pairs['reason'] == reason]['activity'])
+
+    return reason, emotion, activities
+

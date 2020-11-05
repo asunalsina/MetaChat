@@ -1,11 +1,11 @@
 import random, calendar, json
+import rulebased.metabot as metabot
 
 from datetime import datetime
 from wit import Wit
 
 from gpt2bot.decoder import generate_response
-from rulebased.metabot import feelings_conversation, workings_conversation, current_conversation
-from database.mongobase import insert_data, get_data, increment_field
+from database.mongobase import insert_data, get_data, increment_field, get_phase
 
 with open('tokens.json') as f:
     token_file = json.loads(f.read())
@@ -21,7 +21,12 @@ def check_utterance(turn, metaconversation, call, entity, client = client):
         # feelings, current_situation or chatbot_workings
         call = reply['intents'][0]['name']
         metaconversation = True
-        entity = reply['entities'].keys()
+        entities = reply['entities']
+        if entities:
+            [(k, v)] = entities.items()
+            entity = v[0]
+        else:
+            entity = entities
 
     return call, metaconversation, entity
 
@@ -48,29 +53,66 @@ def bot_response(num_samples, model, tokenizer, history, config, mmi_model, mmi_
 
 
 def meta_response(turn, call, metaconversation, stage, chat_id, entity):
-    if call == 'feelings':
-        rm, bot_message, metaconversation, stage = feelings_conversation(stage, metaconversation, turn, chat_id)
-        if metaconversation:
-            stage += 1
-        else:
-            stage = 0
-            increment_field(call, chat_id)
+    phase = get_phase(chat_id)
 
-    elif call == 'current_situation':
-        rm, bot_message, metaconversation, stage = current_conversation(stage, metaconversation, turn, chat_id)
-        if metaconversation:
-            stage += 1
-        else:
-            stage = 0
-            increment_field(call, chat_id)
+    if phase == 1:
+        if call == 'feelings':
+            rm, bot_message, metaconversation, stage = metabot.feelings_conversation(stage, metaconversation, turn, chat_id)
+            if metaconversation:
+                stage += 1
+            else:
+                stage = 0
+                increment_field(call, chat_id)
 
-    elif call == 'chatbot_workings':
-        rm, bot_message, metaconversation, stage = workings_conversation(stage, metaconversation, turn, chat_id, entity)
-        if metaconversation:
-            stage += 1
-        else:
-            stage = 0
-            increment_field(call, chat_id)
+        elif call == 'current_situation':
+            rm, bot_message, metaconversation, stage = metabot.current_conversation(stage, metaconversation, turn, chat_id)
+            if metaconversation:
+                stage += 1
+            else:
+                stage = 0
+                increment_field(call, chat_id)
+
+        elif call == 'chatbot_workings':
+            rm, bot_message, metaconversation, stage = metabot.workings_conversation(stage, metaconversation, turn, chat_id, entity)
+            if metaconversation:
+                stage += 1
+            else:
+                stage = 0
+                increment_field(call, chat_id)
+
+    elif phase == 2:
+        if call == 'feelings' or call == 'current_situation':
+            rm, bot_message, metaconversation, stage = metabot.feelings_phase_2(stage, metaconversation, turn, chat_id, entity)
+            if metaconversation:
+                stage += 1
+            else:
+                stage = 0
+                increment_field(call, chat_id)
+
+        elif call == 'chatbot_workings':
+            rm, bot_message, metaconversation, stage = metabot.workings_conversation(stage, metaconversation, turn, chat_id, entity)
+            if metaconversation:
+                stage += 1
+            else:
+                stage = 0
+                increment_field(call, chat_id)
+
+    elif phase == 3:
+        if call == 'feelings' or call == 'current_situation':
+            rm, bot_message, metaconversation, stage = metabot.feelings_phase_3(stage, metaconversation, turn, chat_id, entity)
+            if metaconversation:
+                stage += 1
+            else:
+                stage = 0
+                increment_field(call, chat_id)
+
+        elif call == 'chatbot_workings':
+            rm, bot_message, metaconversation, stage = metabot.workings_conversation(stage, metaconversation, turn, chat_id, entity)
+            if metaconversation:
+                stage += 1
+            else:
+                stage = 0
+                increment_field(call, chat_id)
 
     return rm, bot_message, metaconversation, stage
 

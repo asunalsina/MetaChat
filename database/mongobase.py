@@ -17,14 +17,14 @@ def insert_data(informartion, chat_id, multiple, db = db):
 
     if user is None and not multiple:
         # Create document
-        user_data = {'chat_id': chat_id}
+        user_data = {'chat_id': chat_id, 'phase': 1}
     
         user_data.update(informartion)
 
         db.users.insert_one(user_data)
 
     elif user is None and multiple:
-        user_data = {'chat_id': chat_id}
+        user_data = {'chat_id': chat_id, 'phase': 1}
     
         db.users.insert_one(user_data)
 
@@ -106,3 +106,21 @@ def user_map(chat_id, text, column, db = db):
 
     elif column == 'reason':
         db.users.update_one({'chat_id': chat_id}, {'$push': {'map.reason': text}})
+
+    elif column == 'activity':
+        db.users.update_one({'chat_id': chat_id}, {'$push': {'map.activity': text}})
+
+def get_map_pairs(chat_id, value, db = db):
+    user = db.users.find_one({'chat_id': chat_id})
+
+    if value == 'reason':
+        return user['emotion-reason']
+    elif value == 'activity':
+        return user['emotion-reason-activity']
+
+
+def get_phase(chat_id, db = db):
+
+    user = db.users.find_one({'chat_id': chat_id})
+
+    return user['phase']
