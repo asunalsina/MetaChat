@@ -18,7 +18,7 @@ import re
 from model import download_model_folder, download_reverse_model_folder, load_model
 from decoder import generate_response
 
-from rulebased.classificator import reply_message, save_conversation
+from rulebased.classifier import reply_message, save_conversation
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)

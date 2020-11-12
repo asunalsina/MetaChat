@@ -23,12 +23,23 @@ def feelings_conversation(stage, meta_conversation, user_message, chat_id, sente
 
         else:
             bot_message = sentences['feelings'][stage]
-            button_list = sentences['buttons']['feelings']
+            button_list = sentences['buttons']['yes_no']
             rm = ReplyKeyboardMarkup(button_list)
 
     elif stage == 1:
+        if user_message.lower() == 'yes'
+            bot_message = sentences['feelings'][stage]
+            button_list = sentences['buttons']['distress']
+            rm = ReplyKeyboardMarkup(button_list)
+        else:
+            bot_message = 'Okay!'
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False
+
+
+    elif stage == 2:
         # Feelings conversation
-        if user_message.lower() == 'stressed' or user_message.lower() == 'depressed':
+        if any(True for button in sentences['buttons']['distress'] if user_message.lower() == button[0].lower() and user_message.lower() != 'none'):
             # Save user map data
             mongobase.user_map(chat_id, user_message.lower(), 'emotion')
             
@@ -51,7 +62,7 @@ def feelings_conversation(stage, meta_conversation, user_message, chat_id, sente
             rm = ReplyKeyboardRemove()
             meta_conversation = False
 
-    elif stage == 2:
+    elif stage == 3:
         # Feelings conversation
         if not any([True for exercise in sentences['anxiety_exercises'] if exercise.lower() == user_message.lower()]):
             # Classify the reason in one of the categories
@@ -77,7 +88,7 @@ def feelings_conversation(stage, meta_conversation, user_message, chat_id, sente
             rm = ReplyKeyboardRemove()
             meta_conversation = False
 
-    elif stage == 3:
+    elif stage == 4:
         # Reason categories
         if user_message.lower() in ['loss of a loved one', 'job', 'relationship', 'money', 'university', 'health']:
             if user_message.lower() == 'loss of a loved one': 
@@ -101,7 +112,7 @@ def feelings_conversation(stage, meta_conversation, user_message, chat_id, sente
                 rm = ReplyKeyboardRemove()    
                 meta_conversation = False
 
-    elif stage == 4:
+    elif stage == 5:
         if user_message.lower() in sentences['anxiety_exercises']:
             bot_message = sentences['exercises_instructions'][user_message.lower().split()[0]]
             rm = ReplyKeyboardRemove()
@@ -119,7 +130,7 @@ def feelings_conversation(stage, meta_conversation, user_message, chat_id, sente
                 meta_conversation = False
 
 
-    elif stage == 5:
+    elif stage == 6:
         bot_message = sentences['exercises_instructions'][user_message.lower().split()[0]]
         rm = ReplyKeyboardRemove()
         meta_conversation = False
@@ -137,7 +148,7 @@ def current_conversation(stage, meta_conversation, user_message, chat_id, senten
     elif stage == 1:
         if user_message.lower() == 'yes':
             bot_message = sentences['current'][stage]
-            button_list = sentences['buttons']['distress']
+            button_list = sentences['buttons']['distress'][:-1]
             rm = ReplyKeyboardMarkup(button_list)
 
         else:
@@ -324,11 +335,11 @@ def feelings_phase_2(stage, meta_conversation, user_message, chat_id, entity, se
 
         else:
             bot_message = sentences['feelings_phase_two'][stage][1]
-            button_list = sentences['buttons']['distress']
+            button_list = sentences['buttons']['distress'][:-1]
             rm = ReplyKeyboardMarkup(button_list)
 
     elif stage == 2:
-        if any([True for element in sentences['buttons']['distress'] if element[0].lower() == user_message.lower()]):
+        if any(True for element in sentences['buttons']['distress'] if element[0].lower() == user_message.lower()):
             mongobase.user_map(chat_id, user_message.lower(), 'emotion')
             bot_message = sentences['feelings_phase_two'][stage][0]
             button_list = sentences['buttons']['reason_categories']

@@ -46,7 +46,6 @@ def bot_response(num_samples, model, tokenizer, history, config, mmi_model, mmi_
         bot_message = bot_messages[0]
     else:
         print('Bot messages: ', bot_messages)
-        print('here')
         bot_message = random.choice(bot_messages)
 
     return rm, bot_message

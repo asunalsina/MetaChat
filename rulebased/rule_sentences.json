@@ -1,5 +1,6 @@
 {
-    "feelings": ["I've noticed that you're feeling a bit down. How are you feeling?",
+    "feelings": ["I've noticed that you're feeling a bit down. Do you want to share your feelings?",
+                "How are you feeling?",
                 "What is making you feel like that?",
                 "Do you want me to tell you some exercises that can help you?",
                 "Choose one!"],
@@ -42,7 +43,7 @@
                 "feelings": [["Stressed"], ["Depressed"], ["None"]],
 
                 "distress": [["Lonely"], ["Sad"], ["Depressed"], ["Stressed"], 
-                    ["Afraid"], ["Overwhelmed"]],
+                    ["Afraid"], ["Overwhelmed"], ["None"]],
 
                 "malfunction": [["Repetitive"], ["Unclear"], 
                         ["Disrespectful"], ["Illogical"],
@@ -53,8 +54,8 @@
                 "new_data": [["Manage my data"], ["Why certain questions are asked?"], 
                     ["How is my data being used?"]],
 
-                "reason_categories": [["grief"], ["job"], ["relationship"], ["money"], 
-                    ["university"], ["health"]],
+                "reason_categories": [["Grief"], ["Job"], ["Relationship"], ["Money"], 
+                    ["University"], ["Health"]],
 
                 "profile": [["Delete data"], ["Manage hobbies"], ["Manage reminders"]],
 
