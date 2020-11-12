@@ -27,7 +27,7 @@ def feelings_conversation(stage, meta_conversation, user_message, chat_id, sente
             rm = ReplyKeyboardMarkup(button_list)
 
     elif stage == 1:
-        if user_message.lower() == 'yes'
+        if user_message.lower() == 'yes':
             bot_message = sentences['feelings'][stage]
             button_list = sentences['buttons']['distress']
             rm = ReplyKeyboardMarkup(button_list)
