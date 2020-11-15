@@ -303,6 +303,9 @@ def feelings_phase_2(stage, meta_conversation, user_message, chat_id, entity, se
 
         else:
             # Save activity
+            last_emotion = mongobase.last_emotion(chat_id, 'get')
+            mongobase.user_map(chat_id, last_emotion[0].lower(), 'emotion')
+            mongobase.user_map(chat_id, last_emotion[1].lower(), 'reason')
             mongobase.user_map(chat_id, user_message.lower(), 'activity')
             bot_message = sentences['feelings_phase_two'][stage][1]
             rm = {}
