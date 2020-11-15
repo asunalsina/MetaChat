@@ -30,17 +30,23 @@
     "profile_data": [["Are you sure you want to delete your data?", "What do you want to do?", "How often do you want the reminders?"],
                     "Okay, your data has been deleted"],
 
-    "feelings_phase_two": ["Is %s making you feel %s right now?", 
+    "feelings_phase_two": ["I see you're %s. Could it be because of your %s?", 
         ["Let's try to improve your mood. What activity do you feel like doing?", "How do you feel?"],
         ["What is causing it?", "Cool choice!"], 
         "Thank you for sharing"],
 
-    "feelings_phase_three": ["I've noticed that you're %s. Let's ", 
+    "user_phase_2": ["What do you want to do?", ["Choose one option", 
+                "According to the data I have, you usually feel %s due to %s",
+                "It's used to improve the ability of the chatbot to detect the intent and feelings of the users so it can provide a better service"]],
+
+    "user_phase_3": ["What do you want to do?", ["Choose one option", 
+                "The data in your user profile suggest that when you are %s you fancy %s to improve your mood",
+                "It's used to improve the ability of the chatbot to detect the intent and feelings of the users so it can provide a better service"]],
+
+    "feelings_phase_three": ["I've noticed that you're %s. Do you feel like...", 
         "I hope this will improve your mood!"],
 
     "buttons": {"yes_no": [["Yes"], ["No"]], 
-
-                "feelings": [["Stressed"], ["Depressed"], ["None"]],
 
                 "distress": [["Lonely"], ["Sad"], ["Depressed"], ["Stressed"], 
                     ["Afraid"], ["Overwhelmed"], ["None"]],
@@ -49,17 +55,19 @@
                         ["Disrespectful"], ["Illogical"],
                         ["Other"]],
 
-                "data": [["Manage my data"], ["Know how my data is used"]],
+                "data": [["Manage my data"], ["How is my data being used?"],
+                 ["Why certain questions are asked?"]],
 
-                "new_data": [["Manage my data"], ["Why certain questions are asked?"], 
+                "data_2": [["Manage my data"], ["Why are you asking me this?"], 
+                    ["How is my data being used?"]],
+
+                "data_3": [["Manage my data"], ["Why are you suggesting me this?"], 
                     ["How is my data being used?"]],
 
                 "reason_categories": [["Grief"], ["Job"], ["Relationship"], ["Money"], 
-                    ["University"], ["Health"]],
+                    ["Studies"], ["Health"]],
 
-                "profile": [["Delete data"], ["Manage hobbies"], ["Manage reminders"]],
+                "profile": [["Delete data"], ["Manage reminders"]],
 
-                "reminder": [["Once a day"], ["Several days per week"], ["I do not want remminders"]],
-
-                "hobbies": [["Add hobbies"], ["Delete hobbies"], ["Saved hobbies"]]}
+                "reminder": [["Once a day"], ["Several days per week"], ["I do not want remminders"]]}
 }

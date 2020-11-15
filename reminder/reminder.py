@@ -6,11 +6,8 @@ import schedule, time, datetime
 import numpy as np
 from functools import reduce
 
-from database.mongobase import set_reminder
-
 with open('tokens.json') as f:
     token_file = json.loads(f.read())
-
 
 with open('rulebased/rule_sentences.json') as file:
     sentences = json.loads(file.read())

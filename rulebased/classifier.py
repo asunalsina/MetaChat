@@ -5,7 +5,7 @@ from datetime import datetime
 from wit import Wit
 
 from gpt2bot.decoder import generate_response
-from database.mongobase import insert_data, get_data, increment_field, get_phase
+from database.mongobase import mongodb_database
 
 with open('tokens.json') as f:
     token_file = json.loads(f.read())
@@ -13,6 +13,7 @@ with open('tokens.json') as f:
 # Create client
 token = token_file["wit_token"]
 client = Wit(token)
+mongobase = mongodb_database()
 
 def check_utterance(turn, metaconversation, call, entity, client = client):
     reply = client.message(turn)
@@ -52,7 +53,7 @@ def bot_response(num_samples, model, tokenizer, history, config, mmi_model, mmi_
 
 
 def meta_response(turn, call, metaconversation, stage, chat_id, entity):
-    phase = get_phase(chat_id)
+    phase = mongobase.get_phase(chat_id)
 
     if phase == 1:
         if call == 'feelings':
@@ -61,7 +62,7 @@ def meta_response(turn, call, metaconversation, stage, chat_id, entity):
                 stage += 1
             else:
                 stage = 0
-                increment_field(call, chat_id)
+                mongobase.increment_field(call, chat_id)
 
         elif call == 'current_situation':
             rm, bot_message, metaconversation, stage = metabot.current_conversation(stage, metaconversation, turn, chat_id)
@@ -69,15 +70,15 @@ def meta_response(turn, call, metaconversation, stage, chat_id, entity):
                 stage += 1
             else:
                 stage = 0
-                increment_field(call, chat_id)
+                mongobase.increment_field(call, chat_id)
 
         elif call == 'chatbot_workings':
-            rm, bot_message, metaconversation, stage = metabot.workings_conversation(stage, metaconversation, turn, chat_id, entity)
+            rm, bot_message, metaconversation, stage = metabot.workings_conversation(stage, metaconversation, turn, chat_id, entity, phase)
             if metaconversation:
                 stage += 1
             else:
                 stage = 0
-                increment_field(call, chat_id)
+                mongobase.increment_field(call, chat_id)
 
     elif phase == 2:
         if call == 'feelings' or call == 'current_situation':
@@ -86,15 +87,15 @@ def meta_response(turn, call, metaconversation, stage, chat_id, entity):
                 stage += 1
             else:
                 stage = 0
-                increment_field(call, chat_id)
+                mongobase.increment_field(call, chat_id)
 
         elif call == 'chatbot_workings':
-            rm, bot_message, metaconversation, stage = metabot.workings_conversation(stage, metaconversation, turn, chat_id, entity)
+            rm, bot_message, metaconversation, stage = metabot.workings_conversation(stage, metaconversation, turn, chat_id, entity, phase)
             if metaconversation:
                 stage += 1
             else:
                 stage = 0
-                increment_field(call, chat_id)
+                mongobase.increment_field(call, chat_id)
 
     elif phase == 3:
         if call == 'feelings' or call == 'current_situation':
@@ -103,15 +104,15 @@ def meta_response(turn, call, metaconversation, stage, chat_id, entity):
                 stage += 1
             else:
                 stage = 0
-                increment_field(call, chat_id)
+                mongobase.increment_field(call, chat_id)
 
         elif call == 'chatbot_workings':
-            rm, bot_message, metaconversation, stage = metabot.workings_conversation(stage, metaconversation, turn, chat_id, entity)
+            rm, bot_message, metaconversation, stage = metabot.workings_conversation(stage, metaconversation, turn, chat_id, entity, phase)
             if metaconversation:
                 stage += 1
             else:
                 stage = 0
-                increment_field(call, chat_id)
+                mongobase.increment_field(call, chat_id)
 
     return rm, bot_message, metaconversation, stage
 
@@ -141,5 +142,5 @@ def save_conversation(turn, chat_id, field):
 
     data = {field: complete_message}
 
-    insert_data(data, chat_id, multiple = True)
+    mongobase.insert_data(data, chat_id, multiple = True)
 

@@ -1,6 +1,6 @@
 import numpy as np
 import string, json
-import database.mongobase as mongobase
+from database.mongobase import mongodb_database
 import pandas as pd
 
 from telegram import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
@@ -8,9 +8,10 @@ from telegram import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 with open('rulebased/rule_sentences.json') as file:
     sentences = json.loads(file.read())
 
+mongobase = mongodb_database()
 
+### PHASE 1 ###
 def feelings_conversation(stage, meta_conversation, user_message, chat_id, sentences = sentences):
-
     if stage == 0:
         clean_message = ''.join([word for word in user_message if word not in string.punctuation])
         clean_message = clean_message.split()
@@ -90,11 +91,8 @@ def feelings_conversation(stage, meta_conversation, user_message, chat_id, sente
 
     elif stage == 4:
         # Reason categories
-        if user_message.lower() in ['loss of a loved one', 'job', 'relationship', 'money', 'university', 'health']:
-            if user_message.lower() == 'loss of a loved one': 
-                mongobase.user_map(chat_id, 'death', 'reason')
-            else:
-                mongobase.user_map(chat_id, user_message.lower(), 'reason')
+        if user_message.lower() in ['grief', 'job', 'relationship', 'money', 'studies', 'health']:
+            mongobase.user_map(chat_id, user_message.lower(), 'reason')
             mongobase.user_map(chat_id, 'nothing', 'activity')
             
             bot_message = sentences['feelings'][stage-1]
@@ -139,7 +137,6 @@ def feelings_conversation(stage, meta_conversation, user_message, chat_id, sente
     return rm, bot_message, meta_conversation, stage
 
 def current_conversation(stage, meta_conversation, user_message, chat_id, sentences = sentences):
-
     if stage == 0:
         bot_message = sentences['current'][stage]
         button_list = button_list = sentences['buttons']['yes_no']
@@ -168,10 +165,14 @@ def current_conversation(stage, meta_conversation, user_message, chat_id, senten
 
     return rm, bot_message, meta_conversation, stage
 
-def workings_conversation(stage, meta_conversation, user_message, chat_id, entity, sentences = sentences):
-
+def workings_conversation(stage, meta_conversation, user_message, chat_id, entity, phase, sentences = sentences):
     if 'meta' == entity.get('name'):
-        rm, bot_message, meta_conversation, stage = user_conversation(stage, meta_conversation, user_message, chat_id, sentences = sentences)
+        if phase == 1:
+            rm, bot_message, meta_conversation, stage = user_conversation(stage, meta_conversation, user_message, chat_id, sentences = sentences)
+        elif phase == 2:
+            rm, bot_message, meta_conversation, stage = user_phase_2(stage, meta_conversation, user_message, chat_id, sentences = sentences)
+        elif phase == 3:
+            rm, bot_message, meta_conversation, stage = user_phase_3(stage, meta_conversation, user_message, chat_id, sentences = sentences)
     elif 'malfunction' == entity.get('name'):
         rm, bot_message, meta_conversation, stage = malfunction_conversation(stage, meta_conversation, user_message, chat_id, sentences = sentences)
 
@@ -200,13 +201,9 @@ def malfunction_conversation(stage, meta_conversation, user_message, chat_id, se
     return rm, bot_message, meta_conversation, stage
 
 def user_conversation(stage, meta_conversation, user_message, chat_id, sentences = sentences):
-
     if stage == 0:
         bot_message = sentences['user_data'][stage]
-        if not mongobase.metaquestion(chat_id, 'keys'):
-            button_list = sentences['buttons']['data']
-        else:
-            button_list = sentences['buttons']['new_data']
+        button_list = sentences['buttons']['data']
         rm = ReplyKeyboardMarkup(button_list)
 
     elif stage == 1:
@@ -215,21 +212,14 @@ def user_conversation(stage, meta_conversation, user_message, chat_id, sentences
             bot_message = sentences['user_data'][stage][0]
             button_list = button_list = sentences['buttons']['profile']
             rm = ReplyKeyboardMarkup(button_list)
-        
         # Know how my data is used
         elif user_message.lower() == sentences['buttons']['data'][1][0].lower():
-            mongobase.metaquestion(chat_id)
             bot_message = sentences['user_data'][stage][1]
             rm = ReplyKeyboardRemove()
             meta_conversation = False
-
-        elif user_message.lower() == sentences['buttons']['new_data'][1][0].lower():
+        # Why certain questions are asked?
+        elif user_message.lower() == sentences['buttons']['data'][2][0].lower():
             bot_message = sentences['user_data'][stage][2]
-            rm = ReplyKeyboardRemove()
-            meta_conversation = False
-
-        elif user_message.lower() == sentences['buttons']['new_data'][2][0].lower():
-            bot_message = sentences['user_data'][stage][1]
             rm = ReplyKeyboardRemove()
             meta_conversation = False
 
@@ -238,12 +228,6 @@ def user_conversation(stage, meta_conversation, user_message, chat_id, sentences
         if user_message.lower() == sentences['buttons']['profile'][0][0].lower():
             bot_message = sentences['profile_data'][0][0]
             button_list = button_list = sentences['buttons']['yes_no']
-            rm = ReplyKeyboardMarkup(button_list)
-
-        # Manage hobbies
-        elif user_message.lower() == sentences['buttons']['profile'][1][0].lower():
-            bot_message = sentences['profile_data'][0][1]
-            button_list = sentences['buttons']['hobbies']
             rm = ReplyKeyboardMarkup(button_list)
 
         # Set reminders
@@ -255,36 +239,13 @@ def user_conversation(stage, meta_conversation, user_message, chat_id, sentences
     elif stage == 3:
         # Delete data
         if user_message.lower() == 'yes':
-            mongobase.delete_data(chat_id, 'user')
+            mongobase.delete_data(chat_id)
             bot_message = sentences['profile_data'][1]
             rm = ReplyKeyboardRemove()
             meta_conversation = False
 
         elif user_message.lower() == 'no':
             bot_message = 'Okay!'
-            rm = ReplyKeyboardRemove()
-            meta_conversation = False
-
-        # Manage hobbies
-        # Add
-        elif user_message.lower() == sentences['buttons']['hobbies'][0][0].lower():
-            bot_message = 'Tell me your hobbies'
-            rm = ReplyKeyboardRemove()
-
-        # Delete
-        elif user_message.lower() == sentences['buttons']['hobbies'][1][0].lower():
-            mongobase.delete_data(chat_id, 'hobbies')
-            bot_message = 'Your hobbies have been deleted'
-            rm = ReplyKeyboardRemove()
-            meta_conversation = False
-
-        # Saved
-        elif user_message.lower() == sentences['buttons']['hobbies'][2][0].lower():
-            saved_hobbies = mongobase.get_hobby(chat_id, True)
-            if len(saved_hobbies) > 0:
-                bot_message = f'These are the hobbies {", ".join(saved_hobbies).lower()}'
-            else:
-                bot_message = 'There are no hobbies saved in your profile'
             rm = ReplyKeyboardRemove()
             meta_conversation = False
 
@@ -311,20 +272,14 @@ def user_conversation(stage, meta_conversation, user_message, chat_id, sentences
             rm = ReplyKeyboardRemove()
             meta_conversation = False        
 
-    elif stage == 4:
-        mongobase.save_hobbies(user_message, chat_id)
-        bot_message = 'Your hobbies have been added'
-        rm = {}
-        meta_conversation = False
-
     return rm, bot_message, meta_conversation, stage
 
+### PHASE 2 ###
 def feelings_phase_2(stage, meta_conversation, user_message, chat_id, entity, sentences = sentences):
-
     if stage == 0:
         reason, emotion = get_reason_emotion(chat_id, entity)
-
-        bot_message = sentences['feelings_phase_two'][stage] %(reason, emotion)
+        mongobase.last_emotion(chat_id, 'save', [emotion, reason])
+        bot_message = sentences['feelings_phase_two'][stage] %(emotion, reason)
         button_list = sentences['buttons']['yes_no']
         rm = ReplyKeyboardMarkup(button_list)
 
@@ -343,6 +298,7 @@ def feelings_phase_2(stage, meta_conversation, user_message, chat_id, entity, se
             mongobase.user_map(chat_id, user_message.lower(), 'emotion')
             bot_message = sentences['feelings_phase_two'][stage][0]
             button_list = sentences['buttons']['reason_categories']
+            button_list.append(['Coronavirus'])
             rm = ReplyKeyboardMarkup(button_list)
 
         else:
@@ -360,12 +316,90 @@ def feelings_phase_2(stage, meta_conversation, user_message, chat_id, entity, se
 
     return rm, bot_message, meta_conversation, stage
 
-def feelings_phase_3(stage, meta_conversation, user_message, chat_id, entity, sentences = sentences):
+def user_phase_2(stage, meta_conversation, user_message, chat_id, sentences = sentences):
+    if stage == 0:
+        bot_message = sentences['user_phase_2'][stage]
+        button_list = sentences['buttons']['data_2']
+        rm = ReplyKeyboardMarkup(button_list)
 
-    common_activities = ['running', 'meditation', 'breathing exercise']
+    elif stage == 1:
+        # Manage my data
+        if user_message.lower() == sentences['buttons']['data_2'][0][0].lower():
+            bot_message = sentences['user_phase_2'][stage][0]
+            button_list = button_list = sentences['buttons']['profile']
+            rm = ReplyKeyboardMarkup(button_list)
+        # Why are you asking me this?
+        elif user_message.lower() == sentences['buttons']['data_2'][1][0].lower():
+            last_emotion = mongobase.last_emotion(chat_id, 'get')
+            if last_emotion:
+                bot_message = sentences['user_phase_2'][stage][1] %(last_emotion[0], last_emotion[1])
+            else:
+                bot_message = sentences['user_data'][stage][2]
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False
+        # Know how my data is used
+        elif user_message.lower() == sentences['buttons']['data_2'][2][0].lower():
+            bot_message = sentences['user_phase_2'][stage][2]
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False
+
+    elif stage == 2:
+        # Delete data
+        if user_message.lower() == sentences['buttons']['profile'][0][0].lower():
+            bot_message = sentences['profile_data'][0][0]
+            button_list = button_list = sentences['buttons']['yes_no']
+            rm = ReplyKeyboardMarkup(button_list)
+
+        # Set reminders
+        elif user_message.lower() == sentences['buttons']['profile'][2][0].lower():
+            bot_message = sentences['profile_data'][0][2]
+            button_list = sentences['buttons']['reminder']
+            rm = ReplyKeyboardMarkup(button_list)
+
+    elif stage == 3:
+        # Delete data
+        if user_message.lower() == 'yes':
+            mongobase.delete_data(chat_id)
+            bot_message = sentences['profile_data'][1]
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False
+
+        elif user_message.lower() == 'no':
+            bot_message = 'Okay!'
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False
+
+        # Manage reminders
+        # Daily
+        elif user_message.lower() == sentences['buttons']['reminder'][0][0].lower():
+            print(f'Here {chat_id}')
+            mongobase.set_reminder(chat_id, 'daily')
+            bot_message = 'Your preferences have been saved'
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False        
+
+        # Weekly
+        elif user_message.lower() == sentences['buttons']['reminder'][1][0].lower():
+            mongobase.set_reminder(chat_id, 'weekly')
+            bot_message = 'Your preferences have been saved'
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False        
+
+        # No reminders
+        elif user_message.lower() == sentences['buttons']['reminder'][2][0].lower():
+            mongobase.set_reminder(chat_id, 'no')
+            bot_message = 'Your preferences have been saved'
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False        
+
+    return rm, bot_message, meta_conversation, stage
+
+### PHASE 3 ###
+def feelings_phase_3(stage, meta_conversation, user_message, chat_id, entity, sentences = sentences):
+    common_activities = mongobase.get_hobbies_list()
     if stage == 0:
         reason, emotion, activities = get_emotion_activity(chat_id, entity)
-
+        mongobase.last_activity(chat_id, 'save', [emotion, activities])
         bot_message = sentences['feelings_phase_three'][stage] %(emotion)
         button_list = [[activity] for activity in activities if activity.lower() != 'nothing']
         
@@ -374,24 +408,135 @@ def feelings_phase_3(stage, meta_conversation, user_message, chat_id, entity, se
             index = random.sample(range(0, len(possible_activities)), (3-len(button_list)))
             selected_activities = [[possible_activities[i].capitalize()] for i in index]
             button_list.extend(selected_activities)
+            button_list.append([f"I'm not {emotion}"])
 
         elif len(button_list) > 3:
             index = random.sample(range(0, len(button_list)), 3)
             button_list = [button_list[i] for i in index]
-
+            button_list.append(["I'm not feeling that way"])
         rm = ReplyKeyboardMarkup(button_list)
 
     elif stage == 1:
-        bot_message = sentences['feelings_phase_two'][stage]
+        if user_message == "I'm not feeling that way":
+            bot_message = 'How are you feeling?'
+            button_list = sentences['buttons']['distress']
+            rm = ReplyKeyboardMarkup(button_list)
+        else:
+            bot_message = sentences['feelings_phase_three'][stage]
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False
+
+    elif stage == 2:
+        mongobase.user_map(chat_id, user_message.lower(), 'emotion')
+        if user_message.lower() == 'none':
+            bot_message = 'Okay!'
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False
+        else:
+            bot_message = 'What is causing it?'
+            button_list = sentences['buttons']['reason_categories']
+            button_list.append('Coronavirus')
+            rm = ReplyKeyboardMarkup(button_list)
+
+    elif stage == 3:
+        mongobase.user_map(chat_id, user_message.lower(), 'reason')
+        bot_message = 'What activity do you feel like doing?'
         rm = ReplyKeyboardRemove()
+
+    elif stage == 4:
+        mongobase.user_map(chat_id, user_message.lower(), 'activity')
+        bot_message = 'Cool choice!'
+        rm = {}
         meta_conversation = False
 
     return rm, bot_message, meta_conversation, stage
 
+def user_phase_3(stage, meta_conversation, user_message, chat_id, sentences = sentences):
+    if stage == 0:
+        bot_message = sentences['user_phase_3'][stage]
+        button_list = sentences['buttons']['data_3']
+        rm = ReplyKeyboardMarkup(button_list)
+
+    elif stage == 1:
+        # Manage my data
+        if user_message.lower() == sentences['buttons']['data_3'][0][0].lower():
+            bot_message = sentences['user_phase_3'][stage][0]
+            button_list = button_list = sentences['buttons']['profile']
+            rm = ReplyKeyboardMarkup(button_list)
+        # Why are you asking me this?
+        elif user_message.lower() == sentences['buttons']['data_3'][1][0].lower():
+            last_activity = mongobase.last_activity(chat_id, 'get')
+            if last_activity:
+                activities = [act.lower() for act in last_activity[1] if a.lower() != 'nothing']
+                if len(activities) == 1:
+                    bot_message = sentences['user_phase_3'][stage][1] %(last_activity[0], activities[0])
+                # More than one activity
+                else:
+                    bot_message = sentences['user_phase_3'][stage][1] %(last_activity[0], ', '.join(activities))
+            else:
+                bot_message = sentences['user_data'][stage][2]
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False
+        # Know how my data is used
+        elif user_message.lower() == sentences['buttons']['data_3'][2][0].lower():
+            bot_message = sentences['user_phase_3'][stage][2]
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False
+
+    elif stage == 2:
+        # Delete data
+        if user_message.lower() == sentences['buttons']['profile'][0][0].lower():
+            bot_message = sentences['profile_data'][0][0]
+            button_list = button_list = sentences['buttons']['yes_no']
+            rm = ReplyKeyboardMarkup(button_list)
+
+        # Set reminders
+        elif user_message.lower() == sentences['buttons']['profile'][2][0].lower():
+            bot_message = sentences['profile_data'][0][2]
+            button_list = sentences['buttons']['reminder']
+            rm = ReplyKeyboardMarkup(button_list)
+
+    elif stage == 3:
+        # Delete data
+        if user_message.lower() == 'yes':
+            mongobase.delete_data(chat_id)
+            bot_message = sentences['profile_data'][1]
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False
+
+        elif user_message.lower() == 'no':
+            bot_message = 'Okay!'
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False
+
+        # Manage reminders
+        # Daily
+        elif user_message.lower() == sentences['buttons']['reminder'][0][0].lower():
+            print(f'Here {chat_id}')
+            mongobase.set_reminder(chat_id, 'daily')
+            bot_message = 'Your preferences have been saved'
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False        
+
+        # Weekly
+        elif user_message.lower() == sentences['buttons']['reminder'][1][0].lower():
+            mongobase.set_reminder(chat_id, 'weekly')
+            bot_message = 'Your preferences have been saved'
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False        
+
+        # No reminders
+        elif user_message.lower() == sentences['buttons']['reminder'][2][0].lower():
+            mongobase.set_reminder(chat_id, 'no')
+            bot_message = 'Your preferences have been saved'
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False        
+
+    return rm, bot_message, meta_conversation, stage
 
 # Useful functions
 def classify_reason(sentence):
-    keywords = ['death', 'job', 'relationship', 'money', 'university', 'health']
+    keywords = ['grief', 'job', 'relationship', 'money', 'studies', 'health']
 
     sentence_list = sentence.split(' ')
     reason = list(set(sentence_list).intersection(keywords))
