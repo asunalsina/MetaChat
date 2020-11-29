@@ -1,16 +1,10 @@
 {
-    "feelings": ["I've noticed that you're feeling a bit down. Do you want to share your feelings?",
-                "How are you feeling?",
-                "What is making you feel like that?",
-                "Do you want me to tell you some exercises that can help you?",
-                "Choose one!"],
-
-    "suggestion_keywords": ["suggest", "suggestion", "suggestions", "exercise", "exercises"],
-
-    "anxiety_exercises": ["Breathing exercises", "Visualization exercises"],
-
-    "exercises_instructions":{"breathing": "Put one hand on your chest and the other one on your stomach. Then take deep breaths through your nose. Try to count to four while inhaling and to four while exhaling. Continue the exercise until you feel calmer.",
-                            "visualization": "Think of a place that makes you feel comfortable, happy, safe, peaceful, calmed. It can be a real or imaginary place."},
+    "feelings": ["Hey! Do you want to share your feelings with me?",
+                ["How pleasant are those feelings", "Okay. Have a nice day!"], 
+                "What about energy, how energized do you feel?", 
+                "What would you like to do know?", 
+                ["Really? Maybe we could also try another activity?", "Cool choice!"], 
+                "Nice!"],
 
     "current": ["It feels like the current situation is distressing you",
                 "How does it make you feel?",
@@ -30,26 +24,39 @@
     "profile_data": [["Are you sure you want to delete your data?", "What do you want to do?", "How often do you want the reminders?"],
                     "Okay, your data has been deleted"],
 
-    "feelings_phase_two": ["I see you're %s. Could it be because of your %s?", 
-        ["Let's try to improve your mood. What activity do you feel like doing?", "How do you feel?"],
-        ["What is causing it?", "Cool choice!"], 
-        "Thank you for sharing"],
+    "talk_about": [["I wanted to check in with you. You seem pretty down lately", "Recently, I've noticed some differences in you and wondered how you're doing"],
+                [["Did something happen that made you start feeling this way?", "What set off these feelings?"], "Thanks, if you need me I'm here for you!"], 
+                ["When did you begin feeling like this?", "It might be hard to believe right now, but they way you are feeling will change"], 
+                "It was nice hearing from you! If you need me in the future, let me know!"],
+
+    "reconnect_present": [["Why don't we try this quick exercise?", 
+                        "Maybe it could be helpful if we write a short-term list...", 
+                        "Tell me three things you are grateful for today"],
+                        ["Let's start by sitting down and closing your eyes. Then start feeling the weight of the different parts of your body, feel your fingers and toes. Little by little you're becoming more aware of your body", 
+                        "That's great :D", 
+                        "Cool, I'm listening!", 
+                        "Enjoy your day! If you need me, I'm here for you :D"],
+                        "Thank you! It was nice hearing from you"],
+
+    "suggest_activity": [["It seems like you have too much energy today", 
+                        "It seems like you don't have enough energy today"],
+                        ["Why don't you try %s?", "How energized do you feel"],
+                        "How pleasant are those feelings?",
+                        "What activity do you feel like doing now?",
+                        ["Really? Maybe we could also try another activity?", "Cool choice!"],
+                        "Nice!"],
 
     "user_phase_2": ["What do you want to do?", ["Choose one option", 
                 "According to the data I have, you usually feel %s due to %s",
                 "It's used to improve the ability of the chatbot to detect the intent and feelings of the users so it can provide a better service"]],
 
-    "user_phase_3": ["What do you want to do?", ["Choose one option", 
-                "The data in your user profile suggest that when you are %s you fancy %s to improve your mood",
-                "It's used to improve the ability of the chatbot to detect the intent and feelings of the users so it can provide a better service"]],
+    "buttons": {"yes_no": [["Yes"], ["No"]],
 
-    "feelings_phase_three": ["I've noticed that you're %s. Do you feel like...", 
-        "I hope this will improve your mood!"],
+                "valence": [["Very pleasant"], ["Somewhat pleasant"], 
+                    ["It is okay"], ["Somewhat unpleasant"], ["Very unpleasant"]],
 
-    "buttons": {"yes_no": [["Yes"], ["No"]], 
-
-                "distress": [["Lonely"], ["Sad"], ["Depressed"], ["Stressed"], 
-                    ["Afraid"], ["Overwhelmed"], ["None"]],
+                "activation": [["Very energized"], ["Somewhat energized"], 
+                    ["Neither of them"], ["Somewhat tired"], ["Very tired"]],
 
                 "malfunction": [["Repetitive"], ["Unclear"], 
                         ["Disrespectful"], ["Illogical"],
@@ -61,13 +68,9 @@
                 "data_2": [["Manage my data"], ["Why are you asking me this?"], 
                     ["How is my data being used?"]],
 
-                "data_3": [["Manage my data"], ["Why are you suggesting me this?"], 
-                    ["How is my data being used?"]],
-
-                "reason_categories": [["Grief"], ["Job"], ["Relationship"], ["Money"], 
-                    ["Studies"], ["Health"]],
-
                 "profile": [["Delete data"], ["Manage reminders"]],
+
+                "talk": [["I want to talk about it"], ["I don't want to talk about it"]],
 
                 "reminder": [["Once a day"], ["Several days per week"], ["I do not want remminders"]]}
 }

@@ -18,7 +18,7 @@ import re
 from model import download_model_folder, download_reverse_model_folder, load_model
 from decoder import generate_response
 
-from rulebased.classifier import reply_message, save_conversation
+from rulebased.classifier import reply_message, save_utterance
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -118,7 +118,7 @@ def message(self, update, context):
     turn['user_messages'].append(user_message)
     logger.info(f"{update.effective_message.chat_id} - User >>> {user_message}")
 
-    save_conversation(turn['user_messages'][0], update.effective_message.chat_id, 'user')
+    save_utterance(turn['user_messages'][0], update.effective_message.chat_id, 'user')
 
     # Merge turns into a single history (don't forget EOS token)
     history = ""
@@ -150,7 +150,7 @@ def message(self, update, context):
         else:
             update.message.reply_text(text = bot_message, reply_markup = rm)
 
-    save_conversation(turn['bot_messages'][0], update.effective_message.chat_id, 'bot')
+    save_utterance(turn['bot_messages'][0], update.effective_message.chat_id, 'bot')
 
 def error(update, context):
     logger.warning(context.error)
