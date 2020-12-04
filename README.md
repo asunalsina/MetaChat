@@ -2,8 +2,6 @@
 
 The meta-dialogue chatbot is based on the [gpt2bot](https://github.com/polakowo/gpt2bot) telegram DialoGPT bot.
 
-The stats are calculated using 5agado's [conversation_analyzer](https://github.com/5agado/conversation-analyzer).
-
 ## How to use?
 
 #### Requirements
