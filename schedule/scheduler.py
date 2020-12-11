@@ -91,7 +91,7 @@ def convert_to_hours(time_day):
 def get_times():
     times_dict = {}
     for user in mongobase.all_users():
-        if user['reminders'] == 'daily'
+        if user['reminders'] == 'daily':
             qt = mongobase.save_quadrant_time(user['chat_id'])
             possible_times = []
             for k, v in qt.items():
