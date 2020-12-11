@@ -6,13 +6,7 @@
                 ["Really? Maybe we could also try another activity?", "Cool choice!"], 
                 "Nice!"],
 
-    "current": ["It feels like the current situation is distressing you",
-                "How does it make you feel?",
-                ["Let's go for a walk to relax a bit", 
-                "What about doing a video call with your friends?", 
-                "Let's try some breathing exercises"]],
-
-    "user_data": ["What do you want to do?", ["Choose one option", 
+    "user_data": ["What do you want to do?", ["Do you want to delete your data?", 
                 "It's used to improve the ability of the chatbot to detect the intent and feelings of the users so it can provide a better service",
                 "The questions asked are based on the data the chatbot gets from the conversations with the users"]],
 
@@ -21,8 +15,7 @@
                 "Thank you for you input!"],
 
 
-    "profile_data": [["Are you sure you want to delete your data?", "What do you want to do?", "How often do you want the reminders?"],
-                    "Okay, your data has been deleted"],
+    "profile_data": ["Okay, your data has been deleted", "Do you want to delete your data?", "How often do you want your reminders?"],
 
     "talk_about": [["I wanted to check in with you. You seem pretty down lately", "Recently, I've noticed some differences in you and wondered how you're doing"],
                 [["Did something happen that made you start feeling this way?", "What set off these feelings?"], "Thanks, if you need me I'm here for you!"], 
@@ -46,9 +39,18 @@
                         ["Really? Maybe we could also try another activity?", "Cool choice!"],
                         "Nice!"],
 
-    "user_phase_2": ["What do you want to do?", ["Choose one option", 
-                "According to the data I have, you usually feel %s due to %s",
+    "user_phase_2": ["What do you want to do?", ["What do you want to change?", 
                 "It's used to improve the ability of the chatbot to detect the intent and feelings of the users so it can provide a better service"]],
+
+    "why_activity": ["I suggested %s because %s %s %s you also had %s energy and wanted to do that activity so I thought it could help today",
+                "I suggested %s because %s %s %ss ago you also had %s energy and wanted to do that activity so I thought it could help today", 
+                "The activities suggested are based on the data on your user profile"],
+
+    "why_reminder": ["I sent you this reminder because I noticed that in the %ss you usually have %s energy"],
+
+    "why_talk": ["You seemed to have %s energy and I thought talking about it could help you"],
+
+    "why_present": ["I suggested you to%s because it seemed you were distressed and this activity can help you to focus on the present moment again"],
 
     "buttons": {"yes_no": [["Yes"], ["No"]],
 
@@ -59,18 +61,24 @@
                     ["Neither of them"], ["Somewhat tired"], ["Very tired"]],
 
                 "malfunction": [["Repetitive"], ["Unclear"], 
-                        ["Disrespectful"], ["Illogical"],
-                        ["Other"]],
+                    ["Disrespectful"], ["Illogical"],
+                    ["Other"]],
 
                 "data": [["Manage my data"], ["How is my data being used?"],
-                 ["Why certain questions are asked?"]],
+                    ["Why certain questions are asked?"]],
 
-                "data_2": [["Manage my data"], ["Why are you asking me this?"], 
-                    ["How is my data being used?"]],
+                "data_2": [["Manage my data"], ["How is my data being used?"],
+                    ["Why did you suggest that activity?"]],
 
                 "profile": [["Delete data"], ["Manage reminders"]],
 
-                "talk": [["I want to talk about it"], ["I don't want to talk about it"]],
+                "other": [["Why did you ask me if I wanted to talk about my feelings?"],
+                    ["Why did you suggest me to write a short-term list?"],
+                    ["Why did you suggest me to tell you three things I am grateful for today?"],
+                    ["Why did you suggest me to try that quick activity?"],
+                    ["Why did you send me that reminder?"]],
 
-                "reminder": [["Once a day"], ["Several days per week"], ["I do not want remminders"]]}
+                "reminder": [["Daily"], ["I don't want reminders"]],
+
+                "talk": [["I want to talk about it"], ["I don't want to talk about it"]]}
 }

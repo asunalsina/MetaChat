@@ -1,6 +1,9 @@
 import numpy as np
-import string, json, random, re
-from datetime import datetime
+import string, json, random
+import calendar, math
+
+from datetime import datetime, date
+from dateutil.relativedelta import relativedelta
 import pandas as pd
 
 from database.mongobase import mongodb_database
@@ -117,7 +120,7 @@ def user_conversation(stage, meta_conversation, user_message, chat_id, sentences
         # Manage my data
         if user_message.lower() == sentences['buttons']['data'][0][0].lower():
             bot_message = sentences['user_data'][stage][0]
-            button_list = button_list = sentences['buttons']['profile']
+            button_list = button_list = sentences['buttons']['yes_no']
             rm = ReplyKeyboardMarkup(button_list)
         # Know how my data is used
         elif user_message.lower() == sentences['buttons']['data'][1][0].lower():
@@ -132,51 +135,16 @@ def user_conversation(stage, meta_conversation, user_message, chat_id, sentences
 
     elif stage == 2:
         # Delete data
-        if user_message.lower() == sentences['buttons']['profile'][0][0].lower():
-            bot_message = sentences['profile_data'][0][0]
-            button_list = button_list = sentences['buttons']['yes_no']
-            rm = ReplyKeyboardMarkup(button_list)
-
-        # Set reminders
-        elif user_message.lower() == sentences['buttons']['profile'][2][0].lower():
-            bot_message = sentences['profile_data'][0][2]
-            button_list = sentences['buttons']['reminder']
-            rm = ReplyKeyboardMarkup(button_list)
-
-    elif stage == 3:
-        # Delete data
         if user_message.lower() == 'yes':
             mongobase.delete_data(chat_id)
-            bot_message = sentences['profile_data'][1]
+            bot_message = sentences['profile_data'][0]
             rm = ReplyKeyboardRemove()
             meta_conversation = False
 
         elif user_message.lower() == 'no':
             bot_message = 'Okay!'
             rm = ReplyKeyboardRemove()
-            meta_conversation = False
-
-        # Manage reminders
-        # Daily
-        elif user_message.lower() == sentences['buttons']['reminder'][0][0].lower():
-            mongobase.set_reminder(chat_id, 'daily')
-            bot_message = 'Your preferences have been saved'
-            rm = ReplyKeyboardRemove()
-            meta_conversation = False        
-
-        # Weekly
-        elif user_message.lower() == sentences['buttons']['reminder'][1][0].lower():
-            mongobase.set_reminder(chat_id, 'weekly')
-            bot_message = 'Your preferences have been saved'
-            rm = ReplyKeyboardRemove()
-            meta_conversation = False        
-
-        # No reminders
-        elif user_message.lower() == sentences['buttons']['reminder'][2][0].lower():
-            mongobase.set_reminder(chat_id, 'no')
-            bot_message = 'Your preferences have been saved'
-            rm = ReplyKeyboardRemove()
-            meta_conversation = False        
+            meta_conversation = False   
 
     return rm, bot_message, meta_conversation
 
@@ -184,6 +152,8 @@ def user_conversation(stage, meta_conversation, user_message, chat_id, sentences
 # Talk about what is happening conversation
 def feelings_talk(stage, meta_conversation, user_message, chat_id, entity, sentences = sentences):
     if stage == 0:
+        q = 2 if entity.get('name') == 'quadrant_two' else 3
+        mongobase.get_last_field(chat_id, 'quadrant', q, 'save')
         bot_message = sentences['talk_about'][stage][np.random.randint(len(sentences['talk_about'][stage]))]
         button_list = sentences['buttons']['talk']
         rm = ReplyKeyboardMarkup(button_list)
@@ -216,13 +186,15 @@ def feelings_talk(stage, meta_conversation, user_message, chat_id, entity, sente
 
 def feelings_reconnect(stage, meta_conversation, user_message, chat_id, entity, sentences = sentences):
     if stage == 0:
+        q = 2 if entity.get('name') == 'quadrant_two' else 3
+        mongobase.get_last_field(chat_id, 'quadrant', q, 'save')
         bot_message = sentences['reconnect_present'][stage][np.random.randint(len(sentences['reconnect_present'][stage]))]
         button_list = sentences['buttons']['yes_no']
         rm = ReplyKeyboardMarkup(button_list)
 
     elif stage == 1:
         if user_message.lower() == 'yes':
-            lm = mongobase.get_last_message(chat_id)
+            lm = mongobase.get_last_message(chat_id, 'save')
 
             if lm == sentences['reconnect_present'][stage-1][0]:
                 bot_message = sentences['reconnect_present'][stage][0]
@@ -249,12 +221,14 @@ def feelings_reconnect(stage, meta_conversation, user_message, chat_id, entity, 
     return rm, bot_message, meta_conversation
 
 def feelings_suggest(stage, meta_conversation, user_message, chat_id, entity, sentences = sentences):
-    keywords = ['sleep', 'die', 'kill', 'nothing', 'suicide']
+    keywords = ['sleep', 'die', 'kill', 'nothing', 'suicide', 'none']
     entity_name = entity.get('name')
     if stage == 0:
         if entity_name == 'quadrant_two':
+            mongobase.get_last_field(chat_id, 'quadrant', 2, 'save')
             bot_message = sentences['suggest_activity'][stage][0]
         elif entity_name == 'quadrant_three':
+            mongobase.get_last_field(chat_id, 'quadrant', 3, 'save')
             bot_message = sentences['suggest_activity'][stage][1]
         button_list = sentences['buttons']['yes_no']
         rm = ReplyKeyboardMarkup(button_list)
@@ -262,7 +236,8 @@ def feelings_suggest(stage, meta_conversation, user_message, chat_id, entity, se
     elif stage == 1:
         if user_message.lower() == 'yes':
             hobby = user_hobby(entity_name, chat_id)
-            bot_message = sentences['suggest_activity'][stage][0] %(hobby)
+            mongobase.get_last_field(chat_id, 'activity', hobby, 'save')
+            bot_message = sentences['suggest_activity'][stage][0] %(hobby[2])
             rm = ReplyKeyboardRemove()
             meta_conversation = False
         else:
@@ -312,21 +287,29 @@ def feelings_suggest(stage, meta_conversation, user_message, chat_id, entity, se
 
 def feelings_phase_two(stage, meta_conversation, user_message, chat_id, entity, sentences = sentences):
     selected_conversation = mongobase.get_selected_conversation(chat_id, 'get')
+
     if selected_conversation == 0:
         rm, bot_message, meta_conversation = feelings_talk(stage, meta_conversation, user_message, chat_id, entity, sentences = sentences)
-    
+        mongobase.get_last_field(chat_id, 'conversation', selected_conversation, 'save')
+
     elif selected_conversation == 1:
         rm, bot_message, meta_conversation = feelings_reconnect(stage, meta_conversation, user_message, chat_id, entity, sentences = sentences)
+        mongobase.get_last_field(chat_id, 'conversation', selected_conversation, 'save')
     
     elif selected_conversation == 2:
         rm, bot_message, meta_conversation = feelings_suggest(stage, meta_conversation, user_message, chat_id, entity, sentences = sentences)
+        mongobase.get_last_field(chat_id, 'conversation', selected_conversation, 'save')
 
     return rm, bot_message, meta_conversation
 
 def user_phase_two(stage, meta_conversation, user_message, chat_id, sentences = sentences):
     if stage == 0:
+        buttons = other_buttons(chat_id)
         bot_message = sentences['user_phase_2'][stage]
         button_list = sentences['buttons']['data_2']
+        if buttons:
+            for b in buttons:
+                button_list.append(b)
         rm = ReplyKeyboardMarkup(button_list)
 
     elif stage == 1:
@@ -335,31 +318,56 @@ def user_phase_two(stage, meta_conversation, user_message, chat_id, sentences = 
             bot_message = sentences['user_phase_2'][stage][0]
             button_list = button_list = sentences['buttons']['profile']
             rm = ReplyKeyboardMarkup(button_list)
-        # Why are you asking me this?
+        # Know how my data is used
         elif user_message.lower() == sentences['buttons']['data_2'][1][0].lower():
-            last_emotion = mongobase.last_emotion(chat_id, 'get')
-            if last_emotion:
-                bot_message = sentences['user_phase_2'][stage][1] %(last_emotion[0], last_emotion[1])
-            else:
-                bot_message = sentences['user_data'][stage][2]
+            bot_message = sentences['user_phase_2'][stage][1]
             rm = ReplyKeyboardRemove()
             meta_conversation = False
-        # Know how my data is used
+        # Why did you suggest that activity?
         elif user_message.lower() == sentences['buttons']['data_2'][2][0].lower():
-            bot_message = sentences['user_phase_2'][stage][2]
+            last_activity = mongobase.get_last_field(chat_id, 'activity')
+            last_quadrant = mongobase.get_last_field(chat_id, 'quadrant')
+            if last_activity[3] == 'last':
+                energy_level = 'high' if last_quadrant == 2 else 'low'
+                bot_message = sentences['why_activity'][0] %(last_activity[2], last_activity[3], last_activity[0], last_activity[1], energy_level)
+            elif last_activity[3] == 'a couple' or last_activity[3] == 'a few':
+                energy_level = 'high' if last_quadrant == 2 else 'low'
+                bot_message = sentences['why_activity'][1] %(last_activity[2], last_activity[3], last_activity[0], last_activity[1], energy_level)
+            else:
+                bot_message = sentences['why_activity'][2]
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False
+        # Why did you suggest me to try that quick activity / write a short-term list / tell you three I am grateful for today
+        elif any(b[0] for b in sentences['buttons']['other'][1:4] if b[0].lower() == user_message.lower()):
+            present_activities = [b[0] for b in sentences['buttons']['other'][1:4] if b[0].lower() == user_message.lower()]
+            suggestion = present_activities[0].replace('to', '?').split('?')
+            bot_message = sentences['why_present'][0] %(suggestion[1])
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False
+        # Why did you ask me if I wanted to talk about my feelings
+        elif user_message.lower() == sentences['buttons']['other'][0][0].lower():
+            last_quadrant = mongobase.get_last_field(chat_id, 'quadrant')
+            energy_level = 'high' if last_quadrant == 2 else 'low'
+            bot_message = sentences['why_talk'][0] %(energy_level)
+            rm = ReplyKeyboardRemove()
+            meta_conversation = False
+        # Why did you send me that reminder
+        elif user_message.lower() == sentences['buttons']['other'][4][0].lower():
+            lr = mongobase.save_reminder(chat_id)
+            energy_level = 'high' if lr['quadrant'] == 'quadrant_two' else 'low'
+            bot_message = sentences['why_reminder'][0] %(lr['time'], energy_level)
             rm = ReplyKeyboardRemove()
             meta_conversation = False
 
     elif stage == 2:
         # Delete data
         if user_message.lower() == sentences['buttons']['profile'][0][0].lower():
-            bot_message = sentences['profile_data'][0][0]
-            button_list = button_list = sentences['buttons']['yes_no']
+            bot_message = sentences['profile_data'][1]
+            button_list = sentences['buttons']['yes_no']
             rm = ReplyKeyboardMarkup(button_list)
-
-        # Set reminders
-        elif user_message.lower() == sentences['buttons']['profile'][2][0].lower():
-            bot_message = sentences['profile_data'][0][2]
+        # Manage reminders
+        elif user_message.lower() == sentences['buttons']['profile'][1][0].lower():
+            bot_message = sentences['profile_data'][2]
             button_list = sentences['buttons']['reminder']
             rm = ReplyKeyboardMarkup(button_list)
 
@@ -367,7 +375,7 @@ def user_phase_two(stage, meta_conversation, user_message, chat_id, sentences = 
         # Delete data
         if user_message.lower() == 'yes':
             mongobase.delete_data(chat_id)
-            bot_message = sentences['profile_data'][1]
+            bot_message = sentences['profile_data'][0]
             rm = ReplyKeyboardRemove()
             meta_conversation = False
 
@@ -376,28 +384,11 @@ def user_phase_two(stage, meta_conversation, user_message, chat_id, sentences = 
             rm = ReplyKeyboardRemove()
             meta_conversation = False
 
-        # Manage reminders
-        # Daily
-        elif user_message.lower() == sentences['buttons']['reminder'][0][0].lower():
-            print(f'Here {chat_id}')
-            mongobase.set_reminder(chat_id, 'daily')
-            bot_message = 'Your preferences have been saved'
+        elif user_message.lower() == sentences['buttons']['reminder'][0][0].lower() or user_message.lower() == sentences['buttons']['reminder'][1][0].lower():
+            mongobase.set_reminder(chat_id, user_message.lower())
+            bot_message = 'Okay!'
             rm = ReplyKeyboardRemove()
-            meta_conversation = False        
-
-        # Weekly
-        elif user_message.lower() == sentences['buttons']['reminder'][1][0].lower():
-            mongobase.set_reminder(chat_id, 'weekly')
-            bot_message = 'Your preferences have been saved'
-            rm = ReplyKeyboardRemove()
-            meta_conversation = False        
-
-        # No reminders
-        elif user_message.lower() == sentences['buttons']['reminder'][2][0].lower():
-            mongobase.set_reminder(chat_id, 'no')
-            bot_message = 'Your preferences have been saved'
-            rm = ReplyKeyboardRemove()
-            meta_conversation = False        
+            meta_conversation = False
 
     return rm, bot_message, meta_conversation
 
@@ -434,22 +425,46 @@ def check_temporal_measure(text):
 
     return temporal_measure
 
-def user_hobby(entity_name, chat_id):
-    # Quadrant 1 -> positive valence, high activation
-    # Quadrant 2 -> negative valence, high activation
-    # Quadrant 3 -> negative valence, low activation
-    # Quadrant 4 -> positive valence, low activation
-    user_map = mongobase.get_user_map(chat_id)
-    print(user_map)
-    # Check the time and classify it
-    time_now = datetime.now().strftime("%H:%M")
-    if time_now >= '04:00' and time_now < '12:00':
-        time_day = 'morning'
-    elif time_now >= '12:00' and time_now < '20:00':
-        time_day = 'afternoon'
-    else:
-        time_day = 'evening'
+def get_number_weeks(past_date):
+    today_date = date.today()
+    past_date = datetime.strptime(past_date, '%Y-%m-%d')
+    past_date = past_date.date()
+    days = relativedelta(today_date, past_date)
 
+    if not days.months and not days.years:
+        weeks = math.ceil((days.days%365)/7)
+        if weeks == 1 or days.days == 0:
+            nw = 'last'
+        elif weeks == 2:
+            nw = 'a couple'
+        else:
+            nw = 'a few'
+        return nw
+    else:
+        return None
+
+def other_buttons(chat_id):
+    buttons = []
+    selected_conversation = mongobase.get_last_field(chat_id, 'conversation')
+    last_reminder = mongobase.get_last_field(chat_id, 'reminder')
+    # Talk about
+    if selected_conversation == 0:
+        buttons = sentences['buttons']['other'][0]
+    # Reconnect
+    elif selected_conversation == 1:
+        lm = mongobase.get_last_message(chat_id)
+        if 'short-term' in lm:
+            buttons = sentences['buttons']['other'][1]
+        elif 'grateful' in lm:
+            buttons = sentences['buttons']['other'][2]
+        else:
+            buttons = sentences['buttons']['other'][3] 
+    if last_reminder:
+        buttons.append(sentences['buttons']['other'][4])
+
+    return buttons
+
+def transform_user_map(user_map):
     # Check values for given quadrant
     quadrant_values = zip(user_map['valence'], user_map['activation'])
     qv = list(quadrant_values)
@@ -463,48 +478,106 @@ def user_hobby(entity_name, chat_id):
             quadrant.append('quadrant_three')
         else:
             quadrant.append('quadrant_four')
-    # Create a dataframe and group by quadrant-time
     user_map.pop('activation')
     user_map.pop('valence')
     user_map['quadrant'] = quadrant
-    user_map_df = pd.DataFrame(user_map)
-    pairs = user_map_df.groupby(['quadrant', 'time', 'activity']).size()
-    pairs_df = pairs.to_frame(name = 'size').reset_index()
 
-    quadrant_pairs = pairs_df.loc[pairs_df['quadrant'] == entity_name]
+    return pd.DataFrame(user_map)
 
-    if len(quadrant_pairs) != 0:
-        quadrant_time_pairs = quadrant_pairs.loc[quadrant_pairs['time'] == time_day]
-        if len(quadrant_time_pairs) != 0:
-            max_pairs = quadrant_time_pairs.loc[quadrant_time_pairs['size'] == quadrant_time_pairs['size'].max()].reset_index(drop = True)
-            if len(max_pairs) > 1:
-                hobby = str(max_pairs['activity'][np.random.randint(len(max_pairs))])
-            else:
-                hobby = str(max_pairs['activity'][0])
-        else:
-            max_pairs = quadrant_time_pairs.loc[quadrant_pairs['size'] == quadrant_pairs['size'].max()].reset_index(drop = True)
-            if len(max_pairs) > 1:
-                hobby = str(max_pairs['activity'][np.random.randint(len(max_pairs))])
-            else:
-                hobby = str(max_pairs['activity'][0])
+def selected_activity(pa, oa):
+    if len(pa) == 1:
+        return pa['date'].to_string(index = False).lstrip(), pa['time'].to_string(index = False).lstrip(), pa['activity'].to_string(index = False).lstrip(), pa['week'].to_string(index = False).lstrip()
+    elif len(pa) > 1:
+        if 'last' in pa['week'].unique():
+            fs = pa.loc[pa['week'] == 'last'].reset_index(drop = True)
+        elif 'a couple' in pa['week'].unique():
+            fs = pa.loc[pa['week'] == 'a couple'].reset_index(drop = True)
+        else:    
+            fs = pa.loc[pa['week'] == 'a few'].reset_index(drop = True)
+        fs = fs.iloc[np.random.randint(len(fs))]
+        return fs['date'], fs['time'], fs['activity'], fs['week']
+    else:
+        if len(oa) == 1:
+            return oa['date'].to_string(index = False).lstrip(), oa['time'].to_string(index = False).lstrip(), oa['activity'].to_string(index = False).lstrip(), oa['week'].to_string(index = False).lstrip()
+        elif len(oa) > 1:
+            if 'last' in oa['week'].unique():
+                fs = oa.loc[oa['week'] == 'last'].reset_index(drop = True)
+            elif 'a couple' in oa['week'].unique():
+                fs = oa.loc[oa['week'] == 'a couple'].reset_index(drop = True)
+            else:    
+                fs = oa.loc[oa['week'] == 'a few'].reset_index(drop = True)
+            fs = fs.iloc[np.random.randint(len(fs))]
+            return fs['date'], fs['time'], fs['activity'], fs['week']
 
-    else:    
-        quadrant_pairs = pairs_df.loc[pairs_df['quadrant'].isin('quadrant_one', 'quadrant_four')]
-        if len(quadrant_pairs) != 0:
-            quadrant_time_pairs = quadrant_pairs.loc[quadrant_pairs['time'] == time_day]
-            if len(quadrant_time_pairs) != 0:
-                max_pairs = quadrant_time_pairs.loc[quadrant_time_pairs['size'] == quadrant_time_pairs['size'].max()].reset_index(drop = True)
-                if len(max_pairs) > 1:
-                    hobby = str(max_pairs['activity'][np.random.randint(len(max_pairs))])
+def check_quadrant(quadrant_pairs, user_map, time_day):
+    # Possible activities and other activities dataframe
+    pa = pd.DataFrame()
+    oa = pd.DataFrame()
+
+    if len(quadrant_pairs) == 1:
+        row = user_map.loc[user_map['activity'] == quadrant_pairs['activity'].to_string(index = False).lstrip()]
+        week = get_number_weeks(row['day'].to_string(index = False).lstrip())
+        return row['date'].to_string(index = False).lstrip(), row['time'].to_string(index = False).lstrip(), row['activity'].to_string(index = False).lstrip(), week
+    
+    elif len(quadrant_pairs) > 1:
+        max_activity = quadrant_pairs.loc[quadrant_pairs['size'] == quadrant_pairs['size'].max()].reset_index(drop = True)
+        if len(max_activity) == 1:
+            row = user_map.loc[user_map['activity'] == max_activity['activity'].to_string(index = False).lstrip()]
+            for r in row.iterrows():
+                if r[1]['time'] == time_day:
+                    week = get_number_weeks(r[1]['day'])
+                    r[1]['week'] = week
+                    pa = pa.append(r[1])
                 else:
-                    hobby = str(max_pairs['activity'][0])
-            else:
-                max_pairs = quadrant_time_pairs.loc[quadrant_pairs['size'] == quadrant_pairs['size'].max()].reset_index(drop = True)
-                if len(max_pairs) > 1:
-                    hobby = str(max_pairs['activity'][np.random.randint(len(max_pairs))])
-                else:
-                    hobby = str(max_pairs['activity'][0])
+                    week = get_number_weeks(r[1]['day'])
+                    r[1]['week'] = week
+                    oa = oa.append(r[1])
         else:
-            hobby = get_hobbies_list(self, number_hobbies = 1)
-    return hobby
+            for a in max_activity['activity']:
+                row = user_map.loc[user_map['activity'] == a].copy()
+                if row['time'].to_string(index = False).lstrip() == time_day:
+                    week = get_number_weeks(row['day'].to_string(index = False).lstrip())
+                    row['week'] = week
+                    pa = pa.append(row)
+                else:
+                    week = get_number_weeks(row['day'].to_string(index = False).lstrip())
+                    row['week'] = week
+                    oa = oa.append(row)
 
+        return selected_activity(pa, oa)
+
+def user_hobby(entity_name, chat_id):
+    user_map = mongobase.get_user_map(chat_id)
+    # Check the time and classify it
+    time_now = datetime.now().strftime("%H:%M")
+    if time_now >= '04:00' and time_now < '12:00':
+        time_day = 'morning'
+    elif time_now >= '12:00' and time_now < '20:00':
+        time_day = 'afternoon'
+    else:
+        time_day = 'evening'
+
+    user_map = transform_user_map(user_map)
+
+    # Activity-quadrant pairs
+    pairs = user_map.groupby(['quadrant', 'activity']).size()
+    pairs = pairs.to_frame(name = 'size').reset_index()
+    # Pairs of the detected quadrant
+    quadrant_pairs = pairs.loc[pairs['quadrant'] == entity_name]
+
+    if len(quadrant_pairs) == 0 and entity_name == 'quadrant_two':
+        quadrant_pairs = pairs.loc[pairs['quadrant'] == 'quadrant_one'] 
+        if len(quadrant_pairs) == 0:
+            quadrant_pairs = pairs.loc[pairs['quadrant'] == 'quadrant_four']
+            if len(quadrant_pairs) == 0:
+                quadrant_pairs = pairs.loc[pairs['quadrant'] == 'quadrant_three']
+
+    elif len(quadrant_pairs) == 0 and entity_name == 'quadrant_three':
+        quadrant_pairs = pairs.loc[pairs['quadrant'] == 'quadrant_four'] 
+        if len(quadrant_pairs) == 0:
+            quadrant_pairs = pairs.loc[pairs['quadrant'] == 'quadrant_one']
+            if len(quadrant_pairs) == 0:
+                quadrant_pairs = pairs.loc[pairs['quadrant'] == 'quadrant_two']
+
+    return check_quadrant(quadrant_pairs, user_map, time_day)
+        

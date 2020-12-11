@@ -15,11 +15,13 @@ token = token_file["wit_token"]
 client = Wit(token)
 mongobase = mongodb_database()
 
-def check_utterance(turn, metaconversation, call, entity, client = client):
+def check_utterance(turn, metaconversation, call, entity, chat_id, client = client):
     reply = client.message(turn)
 
     if len(reply['intents']) != 0 and not metaconversation:
         # feelings, current_situation or chatbot_workings
+        phase = mongobase.phase(chat_id, 'get')
+
         call = reply['intents'][0]['name']
         metaconversation = True
         entities = reply['entities']
@@ -28,6 +30,10 @@ def check_utterance(turn, metaconversation, call, entity, client = client):
             entity = v[0]
         else:
             entity = entities
+
+        if phase == 2:
+            if entity.get('name') == 'quadrant_one' or entity.get('name') == 'quadrant_four':
+                metaconversation = False
 
     return call, metaconversation, entity
 
@@ -52,7 +58,7 @@ def meta_response(turn, call, metaconversation, stage, chat_id, entity):
     phase = mongobase.phase(chat_id, 'get')
 
     if phase == 1:
-        if call == 'feelings' or call  == 'current_situation':
+        if call == 'feelings':
             rm, bot_message, metaconversation = metabot.feelings_phase_one(stage, metaconversation, turn, chat_id)
             if metaconversation:
                 stage += 1
@@ -67,7 +73,7 @@ def meta_response(turn, call, metaconversation, stage, chat_id, entity):
                 stage = 0
 
     elif phase == 2:
-        if call == 'feelings' or call == 'current_situation':
+        if call == 'feelings':
             rm, bot_message, metaconversation = metabot.feelings_phase_two(stage, metaconversation, turn, chat_id, entity)
             if metaconversation:
                 stage += 1
@@ -91,7 +97,7 @@ def reply_message(turn, num_samples, model, tokenizer, history, config, mmi_mode
 
     turn  = turn[0]
 
-    call, metaconversation, entity = check_utterance(turn, metaconversation, call, entity)
+    call, metaconversation, entity = check_utterance(turn, metaconversation, call, entity, chat_id)
 
     if metaconversation:
         rm, bot_message, metaconversation, stage = meta_response(turn, call, metaconversation, stage, chat_id, entity)
