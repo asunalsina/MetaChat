@@ -4,7 +4,7 @@ import json, random, calendar
 
 from datetime import datetime, date
 
-with open('tokens.json') as f:
+with open('/home/asun/github/MC/tokens.json') as f:
     token_file = json.loads(f.read())
 
 

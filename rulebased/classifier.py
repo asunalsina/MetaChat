@@ -16,10 +16,12 @@ client = Wit(token)
 mongobase = mongodb_database()
 
 def check_utterance(turn, metaconversation, call, entity, chat_id, client = client):
+    # Check the user sentence and returns the intent and entity
     reply = client.message(turn)
 
+    # If the intent is feelings or chatbot_workings returns True
     if len(reply['intents']) != 0 and not metaconversation:
-        # feelings, current_situation or chatbot_workings
+        # feelings or chatbot_workings
         phase = mongobase.phase(chat_id, 'get')
 
         call = reply['intents'][0]['name']
@@ -38,6 +40,7 @@ def check_utterance(turn, metaconversation, call, entity, chat_id, client = clie
     return call, metaconversation, entity
 
 def bot_response(num_samples, model, tokenizer, history, config, mmi_model, mmi_tokenizer):
+    # DialoGPT generated the bot response
     bot_messages = generate_response(
         model, 
         tokenizer, 
@@ -56,7 +59,7 @@ def bot_response(num_samples, model, tokenizer, history, config, mmi_model, mmi_
 
 def meta_response(turn, call, metaconversation, stage, chat_id, entity):
     phase = mongobase.phase(chat_id, 'get')
-
+    # Call the appropriate conversation based on the phase, intent and entity
     if phase == 1:
         if call == 'feelings':
             rm, bot_message, metaconversation = metabot.feelings_phase_one(stage, metaconversation, turn, chat_id)
@@ -94,7 +97,7 @@ def meta_response(turn, call, metaconversation, stage, chat_id, entity):
 
 def reply_message(turn, num_samples, model, tokenizer, history, config, mmi_model, 
     mmi_tokenizer, metaconversation, stage, call, entity, chat_id):
-
+    # Select the appropriate response generator
     turn  = turn[0]
 
     call, metaconversation, entity = check_utterance(turn, metaconversation, call, entity, chat_id)
@@ -109,6 +112,7 @@ def reply_message(turn, num_samples, model, tokenizer, history, config, mmi_mode
 
 
 def save_utterance(turn, chat_id, field):
+    # Save the conversatoin in the database
     message_time = datetime.now().strftime("%H:%M:%S")
     message_date = datetime.now().strftime("%Y/%m/%d")
     message_day = calendar.day_name[datetime.today().weekday()]

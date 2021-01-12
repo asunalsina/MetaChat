@@ -26,6 +26,7 @@ def transform_map(user_map):
     quadrant_values = zip(user_map['valence'], user_map['activation'])
     qv = list(quadrant_values)
     quadrant = []
+    # Convert valence and activation values to quadrant name
     for v in qv:
         if v[0] > 0 and v[1] > 0:
             quadrant.append('quadrant_one')
@@ -47,10 +48,12 @@ def create_quadrant_time_pairs():
         max_morning = max_afternoon = max_evening = pd.DataFrame([data])
         user_map = user['emotion_map']
         um = transform_map(user_map)
-        # Time-quadrant pairs
+        # Get time-quadrant pairs with the number of repetitions
         pairs = um.groupby(['quadrant', 'time']).size()
         pairs = pairs.to_frame(name = 'size').reset_index()
 
+        # For each time frame get the quadrant with max size
+        # If there is none or several for that time frame then no quadrant is chosen
         if 'morning' in list(pairs['time']):
             mornings = pairs.loc[pairs['time'] == 'morning'] 
             max_morning = mornings.loc[mornings['size'] == mornings['size'].max()].reset_index(drop = True)
@@ -74,6 +77,7 @@ def create_quadrant_time_pairs():
         mongobase.save_quadrant_time(user['chat_id'], times_dict, 'save')
 
 def convert_to_hours(time_day):
+    # Change time frame to hour to set the schedule
     if time_day == 'morning':
         hour = np.random.randint(9, 12)
     elif time_day == 'afternoon':
@@ -92,12 +96,15 @@ def get_times():
     times_dict = {}
     for user in mongobase.all_users():
         if user['reminders'] == 'daily':
+            # Get the predominant quadrants
             qt = mongobase.save_quadrant_time(user['chat_id'])
             possible_times = []
             for k, v in qt.items():
+                # Convert the time to hours if the quadrant is two or three
                 if v != 'None' and v == 'quadrant_two' or v == 'quadrant_three':
                     nk = convert_to_hours(k)
                     possible_times.append([nk, k, v])
+            # If there is more than one time frame choose one randomly
             if len(possible_times) == 1:
                 times_dict[user['chat_id']] = possible_times[0][0]
                 mongobase.save_reminder(user['chat_id'], k, v, 'save')
@@ -119,12 +126,13 @@ def create_schedule(message):
 
 def check_hobbies():
     for user in mongobase.all_users():
+        # Check the hobbies in the user emotion map and change them if necessary
         for i, sentence in enumerate(user['emotion_map']['activity']):
             hobby = compare_hobbies(sentence)
             mongobase.update_hobby(user['chat_id'], hobby, i)
 
 def compare_hobbies(sentence):
-    # Clean and tokenize the sentece
+    # Clean and tokenize the sentence
     stop_words = set(stopwords.words('english')) 
     word_tokens = word_tokenize(sentence)
     filtered_sentence = [w for w in word_tokens if not w in stop_words]
@@ -133,11 +141,13 @@ def compare_hobbies(sentence):
     # Get the hobbies
     hobbies = mongobase.get_hobbies_list()
 
+    # Compare the hobbies in the database with the user sentence
     for hobby in hobbies:
         hobby_split = hobby.split(' ')
         if len(hobby_split) > 1:
             hobby = '_'.join(hobby_split)
 
+        # Get the relatedness of each word with the hobby with conceptnet
         for word in filtered_sentence:
             test_var = True
             relatedness = f'http://api.conceptnet.io/relatedness?node1=/c/en/{word}&node2=/c/en/{hobby}'
@@ -149,11 +159,13 @@ def compare_hobbies(sentence):
                     time.sleep(30)
                     continue
 
+            # Consider that word if the relatedness is greater than the threshold
             if obj['value'] >= 0.5:
                 if len(possible_hobby.keys()) == 0:
                     possible_hobby[obj['value']] = hobby
                 else:
                     [(k,v)] = possible_hobby.items()
+                # If there are several words in the user hobby save the one with higher relatedness
                 if obj['value'] > k:
                         possible_hobby.pop(k)
                         possible_hobby[obj['value']] = hobby
@@ -176,4 +188,3 @@ if __name__ == '__main__':
     while True:
         schedule.run_pending()
         time.sleep(3600)
-    

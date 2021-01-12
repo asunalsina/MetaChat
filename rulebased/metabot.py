@@ -184,6 +184,7 @@ def feelings_talk(stage, meta_conversation, user_message, chat_id, entity, sente
 
     return rm, bot_message, meta_conversation
 
+# Reconnect with the present
 def feelings_reconnect(stage, meta_conversation, user_message, chat_id, entity, sentences = sentences):
     if stage == 0:
         q = 2 if entity.get('name') == 'quadrant_two' else 3
@@ -220,6 +221,7 @@ def feelings_reconnect(stage, meta_conversation, user_message, chat_id, entity, 
 
     return rm, bot_message, meta_conversation
 
+# Suggest an activity
 def feelings_suggest(stage, meta_conversation, user_message, chat_id, entity, sentences = sentences):
     keywords = ['sleep', 'die', 'kill', 'nothing', 'suicide', 'none']
     entity_name = entity.get('name')
@@ -395,6 +397,7 @@ def user_phase_two(stage, meta_conversation, user_message, chat_id, sentences = 
 
 # Useful functions
 def transform_value(text, option):
+    # Change the string with the valence and activation the user chose to int
     valence_dict = {'very pleasant': 2, 'somewhat pleasant': 1, 'it is okay': 0, 
                     'somewhat unpleasant': -1, 'very unpleasant': -2}
     activation_dict = {'very energized': 2, 'somewhat energized': 1, 'neither of them': 0, 
@@ -418,6 +421,7 @@ def check_temporal_measure(text):
     
     numbers = re.findall(r'\d+', text)
 
+    # Check if the user message haw any of the keywords about time
     if any(w for w in filtered_text if w in keywords) or numbers:
         temporal_measure = True
     else:
@@ -431,6 +435,7 @@ def get_number_weeks(past_date):
     past_date = past_date.date()
     days = relativedelta(today_date, past_date)
 
+    # Get how many weeks have passed between the two dates
     if not days.months and not days.years:
         weeks = math.ceil((days.days%365)/7)
         if weeks == 1 or days.days == 0:
@@ -444,13 +449,15 @@ def get_number_weeks(past_date):
         return None
 
 def other_buttons(chat_id):
+    # Add the necessary buttons for the user data conversation
+    # Some buttons should only appear in some moments of the conversation and not always
     buttons = []
     selected_conversation = mongobase.get_last_field(chat_id, 'conversation')
     last_reminder = mongobase.get_last_field(chat_id, 'reminder')
-    # Talk about
+    # Talk about what is happening
     if selected_conversation == 0:
         buttons = sentences['buttons']['other'][0]
-    # Reconnect
+    # Reconnect with the present
     elif selected_conversation == 1:
         lm = mongobase.get_last_message(chat_id)
         if 'short-term' in lm:
@@ -465,7 +472,7 @@ def other_buttons(chat_id):
     return buttons
 
 def transform_user_map(user_map):
-    # Check values for given quadrant
+    # Change valence and activation values for quadrant name
     quadrant_values = zip(user_map['valence'], user_map['activation'])
     qv = list(quadrant_values)
     quadrant = []
@@ -485,6 +492,7 @@ def transform_user_map(user_map):
     return pd.DataFrame(user_map)
 
 def selected_activity(pa, oa):
+    # Select an activity that is closer (number of weeks) to the current date
     if len(pa) == 1:
         return pa['date'].to_string(index = False).lstrip(), pa['time'].to_string(index = False).lstrip(), pa['activity'].to_string(index = False).lstrip(), pa['week'].to_string(index = False).lstrip()
     elif len(pa) > 1:
@@ -514,12 +522,14 @@ def check_quadrant(quadrant_pairs, user_map, time_day):
     pa = pd.DataFrame()
     oa = pd.DataFrame()
 
+    # Check how many pairs there are
     if len(quadrant_pairs) == 1:
         row = user_map.loc[user_map['activity'] == quadrant_pairs['activity'].to_string(index = False).lstrip()]
         week = get_number_weeks(row['day'].to_string(index = False).lstrip())
         return row['date'].to_string(index = False).lstrip(), row['time'].to_string(index = False).lstrip(), row['activity'].to_string(index = False).lstrip(), week
     
     elif len(quadrant_pairs) > 1:
+        # When there are several pairs get the activity with max repetitions
         max_activity = quadrant_pairs.loc[quadrant_pairs['size'] == quadrant_pairs['size'].max()].reset_index(drop = True)
         if len(max_activity) == 1:
             row = user_map.loc[user_map['activity'] == max_activity['activity'].to_string(index = False).lstrip()]
@@ -532,6 +542,9 @@ def check_quadrant(quadrant_pairs, user_map, time_day):
                     week = get_number_weeks(r[1]['day'])
                     r[1]['week'] = week
                     oa = oa.append(r[1])
+        # If there are several activities get number of weeks since that activity was said
+        # If the time of the day is the same as the current time it goes to possible activities, if not it goes to other activities
+        # Possible activities have priority over other activities
         else:
             for a in max_activity['activity']:
                 row = user_map.loc[user_map['activity'] == a].copy()
@@ -559,12 +572,13 @@ def user_hobby(entity_name, chat_id):
 
     user_map = transform_user_map(user_map)
 
-    # Activity-quadrant pairs
+    # Get the activity-quadrant pairs
     pairs = user_map.groupby(['quadrant', 'activity']).size()
     pairs = pairs.to_frame(name = 'size').reset_index()
     # Pairs of the detected quadrant
     quadrant_pairs = pairs.loc[pairs['quadrant'] == entity_name]
 
+    # Get the other quadrant pairs in case that the detected quadrant is not recoded in the user emotion map
     if len(quadrant_pairs) == 0 and entity_name == 'quadrant_two':
         quadrant_pairs = pairs.loc[pairs['quadrant'] == 'quadrant_one'] 
         if len(quadrant_pairs) == 0:
