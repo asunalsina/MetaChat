@@ -20,7 +20,7 @@ mongobase = mongodb_database()
 
 ### PHASE 1 ###
 def feelings_phase_one(stage, meta_conversation, user_message, chat_id, sentences = sentences):
-    keywords = ['sleep', 'die', 'kill', 'nothing', 'suicide']
+    keywords = ['sleep', 'die', 'kill', 'nothing', 'suicide', 'alcohol', 'none', 'beer', 'wine', 'okay', 'alone', 'drink']
 
     if stage == 0:
         bot_message = sentences['feelings'][stage]
@@ -223,7 +223,7 @@ def feelings_reconnect(stage, meta_conversation, user_message, chat_id, entity, 
 
 # Suggest an activity
 def feelings_suggest(stage, meta_conversation, user_message, chat_id, entity, sentences = sentences):
-    keywords = ['sleep', 'die', 'kill', 'nothing', 'suicide', 'none']
+    keywords = ['sleep', 'die', 'kill', 'nothing', 'suicide', 'alcohol', 'none', 'beer', 'wine', 'okay', 'alone', 'drink']
     entity_name = entity.get('name')
     if stage == 0:
         if entity_name == 'quadrant_two':
