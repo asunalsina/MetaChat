@@ -477,11 +477,11 @@ def transform_user_map(user_map):
     qv = list(quadrant_values)
     quadrant = []
     for v in qv:
-        if v[0] > 0 and v[1] > 0:
+        if v[0] >= 0 and v[1] > 0:
             quadrant.append('quadrant_one')
-        elif v[0] < 0 and v[1] > 0:
+        elif v[0] <= 0 and v[1] >= 0:
             quadrant.append('quadrant_two')
-        elif v[0] < 0 and v[1] < 0:
+        elif v[0] < 0 and v[1] <= 0:
             quadrant.append('quadrant_three')
         else:
             quadrant.append('quadrant_four')

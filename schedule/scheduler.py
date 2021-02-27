@@ -28,11 +28,11 @@ def transform_map(user_map):
     quadrant = []
     # Convert valence and activation values to quadrant name
     for v in qv:
-        if v[0] > 0 and v[1] > 0:
+        if v[0] >= 0 and v[1] > 0:
             quadrant.append('quadrant_one')
-        elif v[0] < 0 and v[1] > 0:
+        elif v[0] <= 0 and v[1] >= 0:
             quadrant.append('quadrant_two')
-        elif v[0] < 0 and v[1] < 0:
+        elif v[0] < 0 and v[1] <= 0:
             quadrant.append('quadrant_three')
         else:
             quadrant.append('quadrant_four')

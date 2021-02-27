@@ -9,7 +9,9 @@ import json
 
 from model import download_model_folder, download_reverse_model_folder, load_model
 from decoder import generate_response
-from classifier import classify
+from wit import Wit
+
+token = 'MAKGMX3MMAGO6XUDYEKT6J3YDSUZ3VEK'
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -25,6 +27,9 @@ def run_chat(model, tokenizer, config, mmi_model=None, mmi_tokenizer=None):
     user_utterances = []
     system_utterances = []
     utterances_dict = {}
+
+    # WIT
+    client = Wit(token)
 
     print("Bot >>>", "Just start texting me. If I'm getting annoying, type \"Bye\". To quit the chat type \"Quit\".")
     while True:
@@ -56,7 +61,10 @@ def run_chat(model, tokenizer, config, mmi_model=None, mmi_tokenizer=None):
                 history += message + tokenizer.eos_token
 
         # Generate bot messages
-        if classify(turn['user_messages']):
+        reply = client.message(turn['user_messages'])
+
+        if len(reply['intents']) != 0:
+            print(reply)
             bot_message = 'Meta'
         else:
             bot_messages = generate_response(
