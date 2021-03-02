@@ -34,13 +34,16 @@ def check_utterance(turn, metaconversation, call, entity, chat_id, client = clie
             entity = entities
 
         # Check different combinations that will return metaconversation = False
-        metaconversation = False if phase == 2 and entity.get('name') == 'quadrant_one' or entity.get('name') == 'quadrant_four' else True
+        if phase == 2 and entity.get('name') == 'quadrant_one' or entity.get('name') == 'quadrant_four':
+            metaconversation = False
 
         quadrants = ['quadrant_one', 'quadrant_two', 'quadrant_three', 'quadrant_four']
-        metaconversation = False if call == 'chatbot_workings' and entity.get('name') in quadrants else True
-        
-        metaconversation = False if call == 'feelings' and entity == 'meta' or entity == 'malfunction' else True
-        
+        if call == 'chatbot_workings' and entity.get('name') in quadrants:
+            metaconversation = False
+
+        if call == 'feelings' and entity.get('name') == 'meta' or entity.get('name') == 'malfunction':
+            metaconversation = False
+
     return call, metaconversation, entity
 
 def bot_response(num_samples, model, tokenizer, history, config, mmi_model, mmi_tokenizer):
