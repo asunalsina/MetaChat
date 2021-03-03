@@ -41,7 +41,8 @@ def check_utterance(turn, metaconversation, call, entity, chat_id, client = clie
         if call == 'chatbot_workings' and entity.get('name') in quadrants:
             metaconversation = False
 
-        if call == 'feelings' and entity.get('name') == 'meta' or entity.get('name') == 'malfunction':
+        workings = ['meta', 'malfunction']
+        if call == 'feelings' and entity.get('name') in workings:
             metaconversation = False
 
     return call, metaconversation, entity
