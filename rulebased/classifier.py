@@ -45,6 +45,9 @@ def check_utterance(turn, metaconversation, call, entity, chat_id, client = clie
         if call == 'feelings' and entity.get('name') in workings:
             metaconversation = False
 
+        if not entity.get('name'):
+            metaconversation = False
+
     return call, metaconversation, entity
 
 def bot_response(num_samples, model, tokenizer, history, config, mmi_model, mmi_tokenizer):
