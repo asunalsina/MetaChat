@@ -109,7 +109,6 @@ class mongodb_database(object):
         elif action == 'set':
             self.db.users.update_one({'chat_id': chat_id}, {'$set': {'active_conversation': 3}})
 
-
     def get_user_map(self, chat_id):
         user = self.db.users.find_one({'chat_id': chat_id})
         return user['emotion_map']

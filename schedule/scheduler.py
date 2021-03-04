@@ -126,10 +126,23 @@ def create_schedule(message):
 
 def check_hobbies():
     for user in mongobase.all_users():
-        # Check the hobbies in the user emotion map and change them if necessary
-        for i, sentence in enumerate(user['emotion_map']['activity']):
-            hobby = compare_hobbies(sentence)
-            mongobase.update_hobby(user['chat_id'], hobby, i)
+        if 'last_number_conversions' in user.keys():
+            # Get the previous checked hobbies    
+            nc = mongobase.get_last_field(user['chat_id'], 'number_conversions')
+            em = user['emotion_map']['activity']
+            # Do not check hobbies that have been already checked
+            new_emotion_map = em[nc:]
+            # Check the hobbies in the user emotion map and change them if necessary
+            for i, sentence in enumerate(new_emotion_map):
+                hobby = compare_hobbies(sentence)
+                mongobase.update_hobby(user['chat_id'], hobby, nc)
+                mongobase.get_last_field(user['chat_id'], 'number_conversions', len(em), action = 'save')
+        else:
+            # Check the hobbies in the user emotion map and change them if necessary
+            for i, sentence in enumerate(user['emotion_map']['activity']):
+                hobby = compare_hobbies(sentence)
+                mongobase.update_hobby(user['chat_id'], hobby, i)
+                mongobase.get_last_field(user['chat_id'], 'number_conversions', len(user['emotion_map']['activity']), action = 'save')
 
 def compare_hobbies(sentence):
     # Clean and tokenize the sentence
@@ -140,50 +153,55 @@ def compare_hobbies(sentence):
     possible_hobby = {}
     # Get the hobbies
     hobbies = mongobase.get_hobbies_list()
-
-    # Compare the hobbies in the database with the user sentence
-    for hobby in hobbies:
-        hobby_split = hobby.split(' ')
-        if len(hobby_split) > 1:
-            hobby = '_'.join(hobby_split)
-
-        # Get the relatedness of each word with the hobby with conceptnet
-        for word in filtered_sentence:
-            test_var = True
-            relatedness = f'http://api.conceptnet.io/relatedness?node1=/c/en/{word}&node2=/c/en/{hobby}'
-            while test_var:
-                try:
-                    obj = requests.get(relatedness).json()
-                    test_var = False
-                except:
-                    time.sleep(30)
-                    continue
-
-            # Consider that word if the relatedness is greater than the threshold
-            if obj['value'] >= 0.5:
-                if len(possible_hobby.keys()) == 0:
-                    possible_hobby[obj['value']] = hobby
-                else:
-                    [(k,v)] = possible_hobby.items()
-                # If there are several words in the user hobby save the one with higher relatedness
-                if obj['value'] > k:
-                        possible_hobby.pop(k)
-                        possible_hobby[obj['value']] = hobby
-
-    if len(possible_hobby.keys()) > 0:
-        [(k, v)] = possible_hobby.items()
+    
+    if sentence in hobbies:
+        return sentence
     else:
-        v = sentence
+        # Compare the hobbies in the database with the user sentence
+        for hobby in hobbies:
+            hobby_split = hobby.split(' ')
+            if len(hobby_split) > 1:
+                hobby = '_'.join(hobby_split)
 
-    return v
+            # Get the relatedness of each word with the hobby with conceptnet
+            for word in filtered_sentence:
+                test_var = True
+                relatedness = f'http://api.conceptnet.io/relatedness?node1=/c/en/{word}&node2=/c/en/{hobby}'
+                while test_var:
+                    try:
+                        obj = requests.get(relatedness).json()
+                        test_var = False
+                    except:
+                        time.sleep(5)
+                        continue
+
+                # Consider that word if the relatedness is greater than the threshold
+                if obj['value'] >= 0.5:
+                    if len(possible_hobby.keys()) == 0:
+                        possible_hobby[obj['value']] = hobby
+                        k = obj['value']
+                    else:
+                        [(k,v)] = possible_hobby.items()
+                    # If there are several words in the user hobby save the one with higher relatedness
+                    if obj['value'] > k:
+                            possible_hobby.pop(k)
+                            possible_hobby[obj['value']] = hobby
+
+        if len(possible_hobby.keys()) > 0:
+            [(k, v)] = possible_hobby.items()
+            v = v.replace('_', ' ')
+        else:
+            v = hobbies[np.random.randint(len(hobbies))]
+
+        return v
 
 if __name__ == '__main__':
     message = 'Remember to take a break!'
     
-    schedule.every().day.at('01:00').do(create_quadrant_time_pairs).tag('daily')
-    schedule.every().day.at('01:00').do(check_hobbies).tag('daily')
+    schedule.every().day.at('00:30').do(create_quadrant_time_pairs).tag('daily')
+    schedule.every().day.at('00:30').do(check_hobbies).tag('daily')
            
-    schedule.every().day.at('04:30').do(create_schedule, message)
+    schedule.every().day.at('03:00').do(create_schedule, message)
 
     while True:
         schedule.run_pending()
