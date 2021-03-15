@@ -65,7 +65,7 @@ class mongodb_database(object):
         elif column == 'activity':
             self.db.users.update_one({'chat_id': chat_id}, {'$push': {'emotion_map.activity': value}})
 
-    def phase(self, chat_id, action = 'get'):
+    def phase(self, chat_id, new_phase = 1, action = 'get'):
         if action == 'get':
             user = self.db.users.find_one({'chat_id': chat_id})
             return user['phase']
