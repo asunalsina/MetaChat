@@ -34,10 +34,10 @@ def check_utterance(turn, metaconversation, call, entity, chat_id, client = clie
             entity = entities
 
         # Check different combinations that will return metaconversation = False
-        if phase == 2 and entity.get('name') == 'quadrant_one' or entity.get('name') == 'quadrant_four':
+        quadrants = ['quadrant_one', 'quadrant_four', 'quadrant_two', 'quadrant_three']
+        if phase == 2 and entity.get('name') in quadrants[:2]:
             metaconversation = False
 
-        quadrants = ['quadrant_one', 'quadrant_two', 'quadrant_three', 'quadrant_four']
         if call == 'chatbot_workings' and entity.get('name') in quadrants:
             metaconversation = False
 
@@ -92,7 +92,7 @@ def meta_response(turn, call, metaconversation, stage, chat_id, entity):
             if metaconversation:
                 stage += 1
             else:
-                selected_conversation = 3
+                # selected_conversation = 3
                 mongobase.get_selected_conversation(chat_id, 'set')
                 stage = 0
 

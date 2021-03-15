@@ -51,29 +51,53 @@ def create_quadrant_time_pairs():
         # Get time-quadrant pairs with the number of repetitions
         pairs = um.groupby(['quadrant', 'time']).size()
         pairs = pairs.to_frame(name = 'size').reset_index()
-
+        pq = ['quadrant_two', 'quadrant_three']
         # For each time frame get the quadrant with max size
         # If there is none or several for that time frame then no quadrant is chosen
         if 'morning' in list(pairs['time']):
             mornings = pairs.loc[pairs['time'] == 'morning'] 
             max_morning = mornings.loc[mornings['size'] == mornings['size'].max()].reset_index(drop = True)
             if len(max_morning) > 1:
-                max_morning = pd.DataFrame([{'quadrant': None, 'time': None}])
+                posquad = set(max_morning['quadrant']).intersection(pq)
+                posquad = list(posquad)
+                if len(posquad) == 1:
+                    max_morning = max_morning.loc[max_morning['quadrant'] == posquad[0]]
+                elif len(posquad) > 1:
+                    quad = posquad[np.random.randint(len(posquad))]
+                    max_morning = max_morning.loc[max_morning['quadrant'] == quad]
+                else:
+                    max_morning = pd.DataFrame([{'quadrant': None, 'time': None}])
         if 'afternoon' in list(pairs['time']):
             afternoons = pairs.loc[pairs['time'] == 'afternoon'] 
             max_afternoon = afternoons.loc[afternoons['size'] == afternoons['size'].max()].reset_index(drop = True)
             if len(max_afternoon) > 1:
-                max_afternoon = pd.DataFrame([{'quadrant': None, 'time': None}])
+                posquad = set(max_afternoon['quadrant']).intersection(pq)
+                posquad = list(posquad)
+                if len(posquad) == 1:
+                    max_afternoon = max_afternoon.loc[max_afternoon['quadrant'] == posquad[0]]
+                elif len(posquad) > 1:
+                    quad = posquad[np.random.randint(len(posquad))]
+                    max_afternoon = max_afternoon.loc[max_afternoon['quadrant'] == quad]
+                else:
+                    max_afternoon = pd.DataFrame([{'quadrant': None, 'time': None}])
         if 'evening' in list(pairs['time']):
             evenings = pairs.loc[pairs['time'] == 'evening']
             max_evening = evenings.loc[evenings['size'] == evenings['size'].max()].reset_index(drop = True)
             if len(max_evening) > 1:
-                max_evening = pd.DataFrame([{'quadrant': None, 'time': None}])
+                posquad = set(max_evening['quadrant']).intersection(pq)
+                posquad = list(posquad)
+                if len(posquad) == 1:
+                    max_evening = max_evening.loc[max_evening['quadrant'] == posquad[0]]
+                elif len(posquad) > 1:
+                    quad = posquad[np.random.randint(len(posquad))]
+                    max_evening = max_evening.loc[max_evening['quadrant'] == quad]
+                else:
+                    max_evening = pd.DataFrame([{'quadrant': None, 'time': None}])
 
         times_dict = {'morning': max_morning['quadrant'].to_string(index = False).lstrip(),
             'afternoon': max_afternoon['quadrant'].to_string(index = False).lstrip(),
             'evening': max_evening['quadrant'].to_string(index = False).lstrip()}
-        
+
         mongobase.save_quadrant_time(user['chat_id'], times_dict, 'save')
 
 def convert_to_hours(time_day):
@@ -101,7 +125,8 @@ def get_times():
             possible_times = []
             for k, v in qt.items():
                 # Convert the time to hours if the quadrant is two or three
-                if v != 'None' and v == 'quadrant_two' or v == 'quadrant_three':
+                pq = ['quadrant_two', 'quadrant_three']
+                if v != 'None' and v in pq:
                     nk = convert_to_hours(k)
                     possible_times.append([nk, k, v])
             # If there is more than one time frame choose one randomly
@@ -135,14 +160,14 @@ def check_hobbies():
             # Check the hobbies in the user emotion map and change them if necessary
             for i, sentence in enumerate(new_emotion_map):
                 hobby = compare_hobbies(sentence)
-                mongobase.update_hobby(user['chat_id'], hobby, nc)
-                mongobase.get_last_field(user['chat_id'], 'number_conversions', len(em), action = 'save')
+                mongobase.update_hobby(user['chat_id'], hobby, nc+i)
+            mongobase.get_last_field(user['chat_id'], 'number_conversions', len(em), action = 'save')
         else:
             # Check the hobbies in the user emotion map and change them if necessary
             for i, sentence in enumerate(user['emotion_map']['activity']):
                 hobby = compare_hobbies(sentence)
                 mongobase.update_hobby(user['chat_id'], hobby, i)
-                mongobase.get_last_field(user['chat_id'], 'number_conversions', len(user['emotion_map']['activity']), action = 'save')
+            mongobase.get_last_field(user['chat_id'], 'number_conversions', len(user['emotion_map']['activity']), action = 'save')
 
 def compare_hobbies(sentence):
     # Clean and tokenize the sentence
@@ -198,11 +223,11 @@ def compare_hobbies(sentence):
 if __name__ == '__main__':
     message = 'Remember to take a break!'
     
-    schedule.every().day.at('00:30').do(create_quadrant_time_pairs).tag('daily')
-    schedule.every().day.at('00:30').do(check_hobbies).tag('daily')
+    schedule.every().day.at('01:30').do(create_quadrant_time_pairs).tag('daily')
+    schedule.every().day.at('01:30').do(check_hobbies).tag('daily')
            
     schedule.every().day.at('03:00').do(create_schedule, message)
 
     while True:
         schedule.run_pending()
-        time.sleep(3600)
+        time.sleep(600)

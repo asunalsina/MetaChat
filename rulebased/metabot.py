@@ -1,6 +1,7 @@
 import numpy as np
 import string, json, random
 import calendar, math
+import re
 
 from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
@@ -548,19 +549,21 @@ def check_quadrant(quadrant_pairs, user_map, time_day):
         else:
             for a in max_activity['activity']:
                 row = user_map.loc[user_map['activity'] == a].copy()
-                if row['time'].to_string(index = False).lstrip() == time_day:
-                    week = get_number_weeks(row['day'].to_string(index = False).lstrip())
-                    row['week'] = week
-                    pa = pa.append(row)
-                else:
-                    week = get_number_weeks(row['day'].to_string(index = False).lstrip())
-                    row['week'] = week
-                    oa = oa.append(row)
+                for i, r in row.iterrows():
+                    if r['time'] == time_day:
+                        week = get_number_weeks(r['day'])
+                        r['week'] = week
+                        pa = pa.append(r)
+                    else:
+                        week = get_number_weeks(r['day'])
+                        r['week'] = week
+                        oa = oa.append(r)
 
         return selected_activity(pa, oa)
 
 def user_hobby(entity_name, chat_id):
     user_map = mongobase.get_user_map(chat_id)
+    
     # Check the time and classify it
     time_now = datetime.now().strftime("%H:%M")
     if time_now >= '04:00' and time_now < '12:00':
@@ -571,6 +574,8 @@ def user_hobby(entity_name, chat_id):
         time_day = 'evening'
 
     user_map = transform_user_map(user_map)
+    nc = mongobase.get_last_field(chat_id, 'number_conversions')
+    user_map = user_map[:nc]
 
     # Get the activity-quadrant pairs
     pairs = user_map.groupby(['quadrant', 'activity']).size()
